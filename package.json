@@ -1,0 +1,18 @@
+{
+  "name": "buried-city",
+  "version": "1.0.0",
+  "description": "A zombie survival game inspired by Buried Town",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8000 -c-1",
+    "dev": "npx http-server -p 8000 -c-1 -o"
+  },
+  "keywords": [
+    "game",
+    "zombie",
+    "survival",
+    "phaser"
+  ],
+  "author": "",
+  "license": "MIT"
+}
