@@ -13,6 +13,7 @@ class GameScene extends Phaser.Scene {
         this.craftingManager = new CraftingManager(this, this.inventoryManager);
         this.locationManager = new LocationManager(this);
         this.buildingManager = new BuildingManager(this, this.inventoryManager);
+        this.shelterManager = new ShelterManager(this, this.inventoryManager);
         this.expeditionManager = null; // Initialized when starting expedition
 
         // Initialize game state
@@ -176,6 +177,15 @@ class GameScene extends Phaser.Scene {
         this.menuBtn = this.createButton(40 + buttonWidth * 2, secondRowY, 'Menu', buttonWidth, buttonHeight, buttonStyle, () => {
             this.showGameMenu();
         });
+
+        // Third row - Shelter Storage (only visible at shelter)
+        const thirdRowY = secondRowY + 60;
+
+        // Shelter Storage button
+        this.storageBtn = this.createButton(20, thirdRowY, '🏠 Storage', buttonWidth, buttonHeight, buttonStyle, () => {
+            this.showShelterStorage();
+        });
+        this.storageBtn.setVisible(false); // Hidden by default
     }
 
     createButton(x, y, text, width, height, style, callback) {
@@ -246,6 +256,11 @@ class GameScene extends Phaser.Scene {
         // Update location
         const currentLoc = this.locationManager.getCurrentLocation();
         this.locationText.setText(`📍 ${currentLoc.name}`);
+
+        // Show/hide storage button based on location
+        if (this.storageBtn) {
+            this.storageBtn.setVisible(currentLoc.id === 'shelter');
+        }
 
         // Update weapon
         const weapon = this.inventoryManager.getEquippedWeapon();
@@ -511,6 +526,13 @@ class GameScene extends Phaser.Scene {
         });
     }
 
+    showShelterStorage() {
+        // Launch the shelter storage scene
+        this.scene.launch('ShelterStorageScene', {
+            gameScene: this
+        });
+    }
+
     createModal(title, contentCallback) {
         const container = [];
 
@@ -601,6 +623,7 @@ class GameScene extends Phaser.Scene {
             gameState: this.gameState,
             inventory: this.inventoryManager.serialize(),
             location: this.locationManager.serialize(),
+            shelter: this.shelterManager.serialize(),
             timestamp: Date.now()
         };
 
@@ -620,6 +643,9 @@ class GameScene extends Phaser.Scene {
                 this.gameState = saveData.gameState;
                 this.inventoryManager.deserialize(saveData.inventory);
                 this.locationManager.deserialize(saveData.location);
+                if (saveData.shelter) {
+                    this.shelterManager.deserialize(saveData.shelter);
+                }
                 return true;
             }
         } catch (e) {

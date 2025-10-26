@@ -16,20 +16,16 @@ class LootSelectionScene extends Phaser.Scene {
         // Dark overlay
         this.add.rectangle(0, 0, 800, 600, 0x000000, 0.95).setOrigin(0, 0);
 
+        // Create ExpeditionHUD
+        this.expeditionHUD = new ExpeditionHUD(this, this.gameSceneRef.expeditionManager);
+        this.expeditionHUD.create();
+
         // Title
-        this.add.text(centerX, 30, 'LOOT FOUND', {
+        this.add.text(centerX, 90, 'LOOT FOUND', {
             fontSize: '28px',
             fontFamily: 'Arial Black',
             color: '#00ff00'
         }).setOrigin(0.5);
-
-        // Capacity display
-        this.capacityText = this.add.text(centerX, 65, '', {
-            fontSize: '16px',
-            color: '#ffaa00'
-        }).setOrigin(0.5);
-
-        this.updateCapacityDisplay();
 
         if (this.loot.length === 0) {
             // No loot found
@@ -125,17 +121,6 @@ class LootSelectionScene extends Phaser.Scene {
         });
     }
 
-    updateCapacityDisplay() {
-        const capacity = this.gameSceneRef.expeditionManager.getExpeditionCapacity();
-        const percentage = (capacity.current / capacity.max) * 100;
-        let color = '#00ff00';
-        if (percentage > 80) color = '#ff8800';
-        if (percentage >= 100) color = '#ff0000';
-
-        this.capacityText.setText(`Carrying: ${capacity.current.toFixed(1)}/${capacity.max}kg (${percentage.toFixed(0)}%)`);
-        this.capacityText.setColor(color);
-    }
-
     createReturnButton() {
         const centerX = this.cameras.main.width / 2;
 
@@ -220,5 +205,12 @@ class LootSelectionScene extends Phaser.Scene {
         }
 
         this.gameSceneRef.updateUI();
+    }
+
+    shutdown() {
+        // Clean up HUD when scene stops
+        if (this.expeditionHUD) {
+            this.expeditionHUD.destroy();
+        }
     }
 }

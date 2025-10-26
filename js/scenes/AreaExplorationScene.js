@@ -16,24 +16,45 @@ class AreaExplorationScene extends Phaser.Scene {
     create() {
         const centerX = this.cameras.main.width / 2;
 
-        // Dark background
-        this.add.rectangle(0, 0, 800, 600, 0x1a1a1a).setOrigin(0, 0);
+        // Get location visuals
+        const visuals = LocationVisuals[this.targetLocation.id] || LocationVisuals['shelter'];
+
+        // Themed background
+        this.add.rectangle(0, 0, 800, 600, Phaser.Display.Color.HexStringToColor(visuals.bgColor).color).setOrigin(0, 0);
+
+        // Create ExpeditionHUD
+        this.expeditionHUD = new ExpeditionHUD(this, this.gameSceneRef.expeditionManager);
+        this.expeditionHUD.create();
+
+        // Location banner with icon and emojis
+        const bannerBg = this.add.rectangle(centerX, 90, 700, 50, Phaser.Display.Color.HexStringToColor(visuals.accentColor).color)
+            .setAlpha(0.8);
+
+        // Location icon
+        this.add.text(90, 90, visuals.icon, {
+            fontSize: '40px'
+        }).setOrigin(0.5);
 
         // Title
-        this.titleText = this.add.text(centerX, 30, `EXPLORING: ${this.targetLocation.name.toUpperCase()}`, {
+        this.titleText = this.add.text(centerX, 90, `EXPLORING: ${this.targetLocation.name.toUpperCase()}`, {
             fontSize: '24px',
             fontFamily: 'Arial Black',
-            color: '#ffaa00'
+            color: '#ffffff'
+        }).setOrigin(0.5);
+
+        // Decorative emojis
+        this.add.text(710, 90, visuals.emoji, {
+            fontSize: '20px'
         }).setOrigin(0.5);
 
         // Progress
-        this.progressText = this.add.text(centerX, 65, '', {
+        this.progressText = this.add.text(centerX, 135, '', {
             fontSize: '16px',
             color: '#888888'
         }).setOrigin(0.5);
 
         // Current area display
-        this.areaNameText = this.add.text(centerX, 120, '', {
+        this.areaNameText = this.add.text(centerX, 180, '', {
             fontSize: '28px',
             fontFamily: 'Arial Black',
             color: '#ffffff'
@@ -335,5 +356,12 @@ class AreaExplorationScene extends Phaser.Scene {
         const g = Math.min(255, ((num >> 8) & 0xFF) + 40);
         const b = Math.min(255, (num & 0xFF) + 40);
         return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+    }
+
+    shutdown() {
+        // Clean up HUD when scene stops
+        if (this.expeditionHUD) {
+            this.expeditionHUD.destroy();
+        }
     }
 }

@@ -374,3 +374,56 @@ const LocationAreas = {
         { name: 'Admin Office', containerType: 'safe', zombieChance: 0.3, itemChance: 0.9 }
     ]
 };
+
+// Location visual themes and imagery
+const LocationVisuals = {
+    'shelter': {
+        icon: '🏠',
+        emoji: '🛏️🔨🪑',
+        bgColor: '#2a4a2a',
+        accentColor: '#4a8a4a',
+        description: 'Your safe haven with basic supplies'
+    },
+    'convenience_store': {
+        icon: '🏪',
+        emoji: '🛒🥫🍫',
+        bgColor: '#3a3a5a',
+        accentColor: '#5a5a8a',
+        description: 'Ransacked aisles and empty shelves'
+    },
+    'pharmacy': {
+        icon: '💊',
+        emoji: '💉🩹⚕️',
+        bgColor: '#4a2a2a',
+        accentColor: '#8a4a4a',
+        description: 'Medical supplies scattered everywhere'
+    },
+    'hardware_store': {
+        icon: '🔧',
+        emoji: '🔨⚒️🪚',
+        bgColor: '#4a3a2a',
+        accentColor: '#8a6a4a',
+        description: 'Tools and materials for survival'
+    },
+    'residential': {
+        icon: '🏘️',
+        emoji: '🏠🚪🪟',
+        bgColor: '#2a3a4a',
+        accentColor: '#4a6a8a',
+        description: 'Abandoned homes and dark rooms'
+    },
+    'warehouse': {
+        icon: '🏭',
+        emoji: '📦🚛🏭',
+        bgColor: '#3a2a2a',
+        accentColor: '#6a4a4a',
+        description: 'Massive storage facility'
+    },
+    'hospital': {
+        icon: '🏥',
+        emoji: '🚑⚕️💉',
+        bgColor: '#2a2a3a',
+        accentColor: '#4a4a6a',
+        description: 'Eerie halls filled with danger'
+    }
+};

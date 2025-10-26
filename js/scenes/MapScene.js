@@ -63,47 +63,82 @@ class MapScene extends Phaser.Scene {
 
             if (!location.unlocked) {
                 // Unknown location - show as ???
-                const marker = this.add.text(x, y, '?', {
+                const marker = this.add.text(x, y, '❓', {
                     fontSize: '32px',
                     color: '#666666'
                 }).setOrigin(0.5);
                 return;
             }
 
-            // Location marker
+            // Get location visuals
+            const visuals = LocationVisuals[location.id] || LocationVisuals['shelter'];
             const isCurrentLocation = location.id === currentLocId;
-            const markerColor = isCurrentLocation ? 0x00ff00 : location.id === 'shelter' ? 0x4444ff : 0xff8800;
 
-            const marker = this.add.circle(x, y, 12, markerColor).setStrokeStyle(2, 0xffffff);
+            // Location icon/marker with glow for current location
+            if (isCurrentLocation) {
+                // Glow effect for current location
+                const glow = this.add.circle(x, y, 20, 0x00ff00, 0.3);
+                this.tweens.add({
+                    targets: glow,
+                    scale: 1.3,
+                    alpha: 0,
+                    duration: 1000,
+                    repeat: -1
+                });
+            }
+
+            // Location icon
+            const iconBg = this.add.circle(x, y, 18, Phaser.Display.Color.HexStringToColor(visuals.accentColor).color)
+                .setStrokeStyle(2, isCurrentLocation ? 0x00ff00 : 0xffffff);
+
+            const icon = this.add.text(x, y, visuals.icon, {
+                fontSize: '24px'
+            }).setOrigin(0.5);
 
             // Location name
-            const nameText = this.add.text(x, y + 25, location.name, {
+            const nameText = this.add.text(x, y + 35, location.name, {
                 fontSize: '12px',
                 color: '#ffffff',
-                backgroundColor: '#000000aa',
+                backgroundColor: isCurrentLocation ? '#00ff0044' : '#000000aa',
                 padding: { x: 5, y: 2 }
             }).setOrigin(0.5);
 
             // Make clickable if not shelter and not current location
             if (location.id !== 'shelter' && location.id !== currentLocId) {
-                marker.setInteractive({ useHandCursor: true });
+                iconBg.setInteractive({ useHandCursor: true });
+                icon.setInteractive({ useHandCursor: true });
                 nameText.setInteractive({ useHandCursor: true });
 
                 const showInfo = () => {
                     this.showLocationInfo(location);
                 };
 
-                marker.on('pointerover', () => {
-                    marker.setScale(1.3);
+                iconBg.on('pointerover', () => {
+                    iconBg.setScale(1.2);
+                    icon.setScale(1.2);
                     nameText.setBackgroundColor('#333333');
                 });
 
-                marker.on('pointerout', () => {
-                    marker.setScale(1);
+                iconBg.on('pointerout', () => {
+                    iconBg.setScale(1);
+                    icon.setScale(1);
                     nameText.setBackgroundColor('#000000aa');
                 });
 
-                marker.on('pointerdown', showInfo);
+                icon.on('pointerover', () => {
+                    iconBg.setScale(1.2);
+                    icon.setScale(1.2);
+                    nameText.setBackgroundColor('#333333');
+                });
+
+                icon.on('pointerout', () => {
+                    iconBg.setScale(1);
+                    icon.setScale(1);
+                    nameText.setBackgroundColor('#000000aa');
+                });
+
+                iconBg.on('pointerdown', showInfo);
+                icon.on('pointerdown', showInfo);
                 nameText.on('pointerdown', showInfo);
             }
 
