@@ -38,6 +38,8 @@ const GameConstants = {
     // Combat
     COMBAT_BASE_DAMAGE: 5,
     ZOMBIE_BASE_HP: 30,
+    ZOMBIE_HP_SCALING: 5, // HP increase per day
+    ZOMBIE_DAMAGE_SCALING: 1, // Damage increase per day
     MOOD_ACCURACY_PENALTY: 0.02, // 2% accuracy loss per 10 mood points below 50
 
     // Exploration time costs (in hours)
@@ -45,6 +47,11 @@ const GameConstants = {
     SCAVENGE_TIME_COST: 1,
     REST_TIME_COST: 4,
     BUILD_TIME_COST: 3,
+    AREA_SEARCH_TIME: 0.25, // 15 minutes per area
+
+    // Container mechanics
+    LOCKED_CONTAINER_BASE_TIME: 1, // 1 hour to force open
+    TOOL_TIME_REDUCTION: 0.5, // Tools reduce time by 50%
 
     // Expedition limits
     EXPEDITION_MAX_WEIGHT: 20, // Max items you can carry on expedition
@@ -76,14 +83,14 @@ const Items = {
     'antibiotics': { name: 'Antibiotics', type: 'medicine', hp: 25, rarity: 'uncommon', weight: 0.5 },
     'painkillers': { name: 'Painkillers', type: 'medicine', hp: 15, mood: 10, rarity: 'common', weight: 0.5 },
 
-    // Weapons
+    // Weapons (some are dual-purpose tools)
     'pipe': { name: 'Metal Pipe', type: 'weapon', damage: 8, rarity: 'common', weight: 2 },
     'knife': { name: 'Knife', type: 'weapon', damage: 12, rarity: 'common', weight: 1 },
-    'axe': { name: 'Axe', type: 'weapon', damage: 20, rarity: 'uncommon', weight: 3 },
+    'axe': { name: 'Axe', type: 'weapon', damage: 20, rarity: 'uncommon', weight: 3, utility: 'breaking', utilityPower: 3 },
     'baseball_bat': { name: 'Baseball Bat', type: 'weapon', damage: 15, rarity: 'common', weight: 2 },
-    'crowbar': { name: 'Crowbar', type: 'weapon', damage: 14, rarity: 'common', weight: 2 },
-    'machete': { name: 'Machete', type: 'weapon', damage: 18, rarity: 'uncommon', weight: 2 },
-    'hammer': { name: 'Hammer', type: 'weapon', damage: 10, rarity: 'common', weight: 1.5 },
+    'crowbar': { name: 'Crowbar', type: 'weapon', damage: 14, rarity: 'common', weight: 2, utility: 'prying', utilityPower: 3 },
+    'machete': { name: 'Machete', type: 'weapon', damage: 18, rarity: 'uncommon', weight: 2, utility: 'cutting', utilityPower: 2 },
+    'hammer': { name: 'Hammer', type: 'weapon', damage: 10, rarity: 'common', weight: 1.5, utility: 'breaking', utilityPower: 2 },
 
     // Materials
     'wood': { name: 'Wood', type: 'material', rarity: 'common', weight: 2 },
@@ -269,4 +276,101 @@ const Locations = {
         unlocked: false,
         mapPosition: { x: 200, y: 120 }
     }
+};
+
+// Container types for area exploration
+const ContainerTypes = {
+    'open': {
+        name: 'Open Area',
+        timeToSearch: 0.25, // 15 minutes
+        locked: false,
+        description: 'Items are lying in the open'
+    },
+    'box': {
+        name: 'Box',
+        timeToSearch: 0.5, // 30 minutes
+        locked: false,
+        description: 'A cardboard or wooden box'
+    },
+    'cabinet': {
+        name: 'Cabinet',
+        timeToSearch: 0.5, // 30 minutes
+        locked: false,
+        description: 'A storage cabinet'
+    },
+    'locker': {
+        name: 'Locker',
+        timeToSearch: 0.75, // 45 minutes
+        locked: true,
+        lockDifficulty: 1,
+        description: 'A metal locker - locked!'
+    },
+    'safe': {
+        name: 'Safe',
+        timeToSearch: 2, // 2 hours
+        locked: true,
+        lockDifficulty: 3,
+        description: 'A heavy safe - very secure!'
+    },
+    'crate': {
+        name: 'Crate',
+        timeToSearch: 1, // 1 hour
+        locked: true,
+        lockDifficulty: 2,
+        description: 'A locked wooden crate'
+    }
+};
+
+// Area definitions for each location (multiple searchable areas per location)
+const LocationAreas = {
+    'convenience_store': [
+        { name: 'Front Counter', containerType: 'open', zombieChance: 0.3, itemChance: 0.7 },
+        { name: 'Shelves', containerType: 'open', zombieChance: 0.2, itemChance: 0.8 },
+        { name: 'Storage Room', containerType: 'box', zombieChance: 0.5, itemChance: 0.6 },
+        { name: 'Back Office', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.5 },
+        { name: 'Employee Lockers', containerType: 'locker', zombieChance: 0.2, itemChance: 0.7 }
+    ],
+    'pharmacy': [
+        { name: 'Pharmacy Counter', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.8 },
+        { name: 'Medicine Aisles', containerType: 'open', zombieChance: 0.5, itemChance: 0.7 },
+        { name: 'Prescription Room', containerType: 'locker', zombieChance: 0.6, itemChance: 0.9 },
+        { name: 'Storage Closet', containerType: 'box', zombieChance: 0.4, itemChance: 0.6 },
+        { name: 'Manager Office', containerType: 'cabinet', zombieChance: 0.3, itemChance: 0.5 },
+        { name: 'Safe', containerType: 'safe', zombieChance: 0.2, itemChance: 0.9 }
+    ],
+    'hardware_store': [
+        { name: 'Tool Section', containerType: 'open', zombieChance: 0.3, itemChance: 0.9 },
+        { name: 'Storage Area', containerType: 'crate', zombieChance: 0.5, itemChance: 0.8 },
+        { name: 'Lumber Yard', containerType: 'open', zombieChance: 0.4, itemChance: 0.7 },
+        { name: 'Supply Closet', containerType: 'cabinet', zombieChance: 0.3, itemChance: 0.6 },
+        { name: 'Employee Break Room', containerType: 'locker', zombieChance: 0.2, itemChance: 0.5 }
+    ],
+    'residential': [
+        { name: 'Living Room', containerType: 'open', zombieChance: 0.5, itemChance: 0.6 },
+        { name: 'Kitchen', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.7 },
+        { name: 'Bedroom', containerType: 'cabinet', zombieChance: 0.6, itemChance: 0.6 },
+        { name: 'Bathroom', containerType: 'cabinet', zombieChance: 0.3, itemChance: 0.5 },
+        { name: 'Garage', containerType: 'box', zombieChance: 0.4, itemChance: 0.8 },
+        { name: 'Basement', containerType: 'box', zombieChance: 0.7, itemChance: 0.7 },
+        { name: 'Master Bedroom Safe', containerType: 'safe', zombieChance: 0.2, itemChance: 0.9 }
+    ],
+    'warehouse': [
+        { name: 'Loading Dock', containerType: 'open', zombieChance: 0.6, itemChance: 0.7 },
+        { name: 'Main Storage', containerType: 'crate', zombieChance: 0.7, itemChance: 0.9 },
+        { name: 'Shipping Area', containerType: 'box', zombieChance: 0.5, itemChance: 0.8 },
+        { name: 'Office Area', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.6 },
+        { name: 'Break Room', containerType: 'locker', zombieChance: 0.3, itemChance: 0.5 },
+        { name: 'Forklift Zone', containerType: 'open', zombieChance: 0.6, itemChance: 0.7 },
+        { name: 'Manager Office', containerType: 'safe', zombieChance: 0.2, itemChance: 0.9 }
+    ],
+    'hospital': [
+        { name: 'Emergency Room', containerType: 'open', zombieChance: 0.8, itemChance: 0.8 },
+        { name: 'Pharmacy', containerType: 'locker', zombieChance: 0.7, itemChance: 0.9 },
+        { name: 'Surgery Room', containerType: 'cabinet', zombieChance: 0.7, itemChance: 0.9 },
+        { name: 'Patient Rooms', containerType: 'cabinet', zombieChance: 0.6, itemChance: 0.6 },
+        { name: 'Supply Closet', containerType: 'locker', zombieChance: 0.5, itemChance: 0.8 },
+        { name: 'Morgue', containerType: 'box', zombieChance: 0.9, itemChance: 0.7 },
+        { name: 'Lab', containerType: 'cabinet', zombieChance: 0.6, itemChance: 0.8 },
+        { name: 'Admin Office', containerType: 'safe', zombieChance: 0.3, itemChance: 0.9 }
+    ]
 };

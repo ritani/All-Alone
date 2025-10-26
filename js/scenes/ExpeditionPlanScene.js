@@ -168,38 +168,13 @@ class ExpeditionPlanScene extends Phaser.Scene {
     }
 
     proceedToExploration() {
-        // Perform exploration or scavenging
-        let result;
-        if (this.action === 'explore') {
-            result = this.gameSceneRef.locationManager.explore(this.targetLocation.id);
-        } else {
-            result = this.gameSceneRef.locationManager.scavenge(this.targetLocation.id);
-        }
+        this.gameSceneRef.addMessage(`Entering ${this.targetLocation.name}...`, '#88ccff');
 
-        this.gameSceneRef.addMessage(`${this.action === 'explore' ? 'Exploring' : 'Scavenging'} ${result.location}...`, '#88ccff');
-
-        // Handle exploration combat
-        if (result.zombieEncounter.encountered) {
-            this.gameSceneRef.addMessage(`💀 ${result.zombieEncounter.count} zombie(s) in the area!`, '#ff0000');
-            this.gameSceneRef.handleCombat(result.zombieEncounter, () => {
-                // After combat, show loot selection
-                this.showLootSelection(result.loot, result.timeCost);
-            });
-        } else {
-            this.gameSceneRef.addMessage('Area is clear of zombies.', '#00ff00');
-            this.showLootSelection(result.loot, result.timeCost);
-        }
-    }
-
-    showLootSelection(loot, timeCost) {
-        // Apply exploration time
-        this.gameSceneRef.advanceTime(timeCost);
-
-        // Launch loot selection scene
-        this.scene.launch('LootSelectionScene', {
+        // Launch area-based exploration scene
+        this.scene.launch('AreaExplorationScene', {
             gameScene: this.gameSceneRef,
-            loot: loot,
-            targetLocation: this.targetLocation
+            targetLocation: this.targetLocation,
+            action: this.action
         });
     }
 }
