@@ -125,24 +125,40 @@ class ExpeditionPlanScene extends Phaser.Scene {
             return;
         }
 
+        // Store travel result
+        this.travelResult = travelResult;
+
+        // Launch animated travel scene
+        this.scene.stop();
+        this.scene.launch('TravelAnimationScene', {
+            gameScene: this.gameSceneRef,
+            targetLocation: this.targetLocation,
+            travelResult: travelResult,
+            returning: false,
+            onComplete: () => {
+                // Travel complete - apply time and handle results
+                this.handleTravelComplete();
+            }
+        });
+    }
+
+    handleTravelComplete() {
         // Apply travel time
-        this.gameSceneRef.advanceTime(travelResult.travelTime);
+        this.gameSceneRef.advanceTime(this.travelResult.travelTime);
 
         // Check for travel encounter
-        if (travelResult.travelEncounter.encountered) {
-            this.scene.stop();
-            this.gameSceneRef.addMessage(`⚠️ Zombies attack during travel! ${travelResult.travelEncounter.count} zombie(s)!`, '#ff0000');
-            this.gameSceneRef.handleCombat(travelResult.travelEncounter, () => {
+        if (this.travelResult.travelEncounter.encountered) {
+            this.gameSceneRef.addMessage(`⚠️ Zombies attack during travel! ${this.travelResult.travelEncounter.count} zombie(s)!`, '#ff0000');
+            this.gameSceneRef.handleCombat(this.travelResult.travelEncounter, () => {
                 // After combat, proceed with exploration
                 this.proceedToExploration();
             });
         } else {
-            this.gameSceneRef.addMessage(`Traveled to ${travelResult.location.name} safely.`, '#00ff00');
-            this.scene.stop();
+            this.gameSceneRef.addMessage(`Traveled to ${this.travelResult.location.name} safely.`, '#00ff00');
 
             // Check for discovery
-            if (travelResult.discoveredLocation) {
-                const discoveredLoc = Locations[travelResult.discoveredLocation];
+            if (this.travelResult.discoveredLocation) {
+                const discoveredLoc = Locations[this.travelResult.discoveredLocation];
                 this.gameSceneRef.addMessage(`🗺️ Discovered new location: ${discoveredLoc.name}!`, '#ffaa00');
             }
 

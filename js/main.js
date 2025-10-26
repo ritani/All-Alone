@@ -3,7 +3,7 @@ window.addEventListener('load', () => {
     // Create game configuration with scenes
     const config = {
         ...gameConfig,
-        scene: [SplashScene, MenuScene, GameScene, MapScene, ExpeditionPlanScene, LootSelectionScene]
+        scene: [SplashScene, MenuScene, GameScene, MapScene, ExpeditionPlanScene, LootSelectionScene, TravelAnimationScene]
     };
 
     // Create game instance

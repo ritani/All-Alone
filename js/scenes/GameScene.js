@@ -12,6 +12,7 @@ class GameScene extends Phaser.Scene {
         this.inventoryManager = new InventoryManager(this);
         this.craftingManager = new CraftingManager(this, this.inventoryManager);
         this.locationManager = new LocationManager(this);
+        this.buildingManager = new BuildingManager(this, this.inventoryManager);
         this.expeditionManager = null; // Initialized when starting expedition
 
         // Initialize game state
@@ -22,6 +23,7 @@ class GameScene extends Phaser.Scene {
             energy: GameConstants.INITIAL_ENERGY,
             mood: GameConstants.INITIAL_MOOD,
             hunger: GameConstants.INITIAL_HUNGER,
+            thirst: GameConstants.INITIAL_THIRST,
             isAlive: true
         };
 

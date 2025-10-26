@@ -172,19 +172,34 @@ class LootSelectionScene extends Phaser.Scene {
             return;
         }
 
+        // Store travel result
+        this.travelResult = travelResult;
+
+        // Launch animated travel scene for return journey
+        this.scene.stop();
+        this.scene.launch('TravelAnimationScene', {
+            gameScene: this.gameSceneRef,
+            targetLocation: this.targetLocation,
+            travelResult: travelResult,
+            returning: true,
+            onComplete: () => {
+                this.handleReturnComplete();
+            }
+        });
+    }
+
+    handleReturnComplete() {
         // Apply travel time
-        this.gameSceneRef.advanceTime(travelResult.travelTime);
+        this.gameSceneRef.advanceTime(this.travelResult.travelTime);
 
         // Check for travel encounter on way back
-        if (travelResult.travelEncounter.encountered) {
-            this.gameSceneRef.addMessage(`⚠️ Ambushed on way back! ${travelResult.travelEncounter.count} zombie(s)!`, '#ff0000');
-            this.scene.stop();
-            this.gameSceneRef.handleCombat(travelResult.travelEncounter, () => {
+        if (this.travelResult.travelEncounter.encountered) {
+            this.gameSceneRef.addMessage(`⚠️ Ambushed on way back! ${this.travelResult.travelEncounter.count} zombie(s)!`, '#ff0000');
+            this.gameSceneRef.handleCombat(this.travelResult.travelEncounter, () => {
                 this.completeExpedition();
             });
         } else {
             this.gameSceneRef.addMessage('Returned to shelter safely.', '#00ff00');
-            this.scene.stop();
             this.completeExpedition();
         }
     }
