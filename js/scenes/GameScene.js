@@ -12,6 +12,7 @@ class GameScene extends Phaser.Scene {
         this.inventoryManager = new InventoryManager(this);
         this.craftingManager = new CraftingManager(this, this.inventoryManager);
         this.locationManager = new LocationManager(this);
+        this.expeditionManager = null; // Initialized when starting expedition
 
         // Initialize game state
         this.gameState = {
@@ -143,7 +144,7 @@ class GameScene extends Phaser.Scene {
 
         // Explore button
         this.exploreBtn = this.createButton(20, startY, 'Explore', buttonWidth, buttonHeight, buttonStyle, () => {
-            this.showLocationSelection('explore');
+            this.showMapView('explore');
         });
 
         // Rest button
@@ -153,7 +154,7 @@ class GameScene extends Phaser.Scene {
 
         // Scavenge button
         this.scavengeBtn = this.createButton(40 + buttonWidth * 2, startY, 'Scavenge', buttonWidth, buttonHeight, buttonStyle, () => {
-            this.showLocationSelection('scavenge');
+            this.showMapView('scavenge');
         });
 
         // Second row
@@ -316,86 +317,21 @@ class GameScene extends Phaser.Scene {
         this.advanceTime(hoursToRest);
     }
 
-    showLocationSelection(action) {
+    showMapView(action) {
         if (this.gameState.energy < 10) {
             this.addMessage('Too tired to travel! Rest first.', '#ff0000');
             return;
         }
 
-        this.createModal('SELECT LOCATION', (container) => {
-            const locations = this.locationManager.getAllLocations();
-            let yPos = 150;
-
-            locations.forEach(location => {
-                if (location.id === 'shelter' && action !== 'travel') return;
-
-                const dangerText = '⚠️'.repeat(location.danger);
-                const btnText = `${location.name} ${dangerText}\n${location.description}`;
-
-                const btn = this.add.text(400, yPos, btnText, {
-                    fontSize: '16px',
-                    fontFamily: 'Arial',
-                    color: '#ffffff',
-                    backgroundColor: '#3a3a3a',
-                    padding: { x: 20, y: 10 },
-                    align: 'center',
-                    fixedWidth: 600,
-                    wordWrap: { width: 560 }
-                }).setOrigin(0.5, 0).setInteractive({ useHandCursor: true });
-
-                btn.on('pointerover', () => btn.setBackgroundColor('#4a4a4a'));
-                btn.on('pointerout', () => btn.setBackgroundColor('#3a3a3a'));
-                btn.on('pointerdown', () => {
-                    container.forEach(obj => obj.destroy());
-                    if (action === 'explore') {
-                        this.exploreLocation(location.id);
-                    } else if (action === 'scavenge') {
-                        this.scavengeLocation(location.id);
-                    }
-                });
-
-                container.push(btn);
-                yPos += 80;
-            });
+        // Launch the map scene
+        this.scene.launch('MapScene', {
+            gameScene: this,
+            action: action
         });
     }
 
-    exploreLocation(locationId) {
-        const result = this.locationManager.explore(locationId);
-        this.locationManager.travelTo(locationId);
-
-        this.addMessage(`Exploring ${result.location}...`, '#88ccff');
-
-        // Handle combat first
-        if (result.zombieEncounter.encountered) {
-            this.handleCombat(result.zombieEncounter, () => {
-                // After combat, collect loot
-                this.collectLoot(result.loot);
-                this.advanceTime(result.timeCost);
-            });
-        } else {
-            this.addMessage('No zombies encountered.', '#00ff00');
-            this.collectLoot(result.loot);
-            this.advanceTime(result.timeCost);
-        }
-    }
-
-    scavengeLocation(locationId) {
-        const result = this.locationManager.scavenge(locationId);
-        this.locationManager.travelTo(locationId);
-
-        this.addMessage(`Quickly scavenging ${result.location}...`, '#88ccff');
-
-        if (result.zombieEncounter.encountered) {
-            this.handleCombat(result.zombieEncounter, () => {
-                this.collectLoot(result.loot);
-                this.advanceTime(result.timeCost);
-            });
-        } else {
-            this.collectLoot(result.loot);
-            this.advanceTime(result.timeCost);
-        }
-    }
+    // Note: Old exploration methods replaced by expedition system
+    // These are kept for reference only and are no longer called
 
     handleCombat(encounter, callback) {
         this.addMessage(`💀 ${encounter.count} zombie(s) appeared!`, '#ff0000');
@@ -422,19 +358,7 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    collectLoot(loot) {
-        if (loot.length === 0) {
-            this.addMessage('Found nothing useful.', '#888888');
-            return;
-        }
-
-        loot.forEach(item => {
-            this.inventoryManager.addItem(item.id, item.quantity);
-            this.addMessage(`Found: ${item.name} x${item.quantity}`, '#00ff00');
-        });
-
-        this.updateUI();
-    }
+    // collectLoot method removed - now handled by expedition system
 
     showInventoryMenu() {
         this.createModal('INVENTORY', (container) => {

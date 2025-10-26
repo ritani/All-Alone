@@ -7,19 +7,24 @@ A post-apocalyptic zombie survival game inspired by Buried Town. Manage your res
 ### Core Gameplay
 - **Survival Stats Management**: Keep track of HP, Energy, Mood, and Hunger
 - **Time Progression**: Dynamic day/night cycle with time-based stat decay
-- **Resource Scavenging**: Explore 6 different locations with varying danger levels
+- **Map & Travel System**: Navigate through the city with realistic travel times
+- **Expedition Planning**: Limited carrying capacity (20kg) - choose what to bring back!
+- **Random Encounters**: Zombies may ambush you during travel
+- **Location Discovery**: Find and unlock new locations while exploring
+- **Resource Scavenging**: Explore 7 different locations with varying danger levels
 - **Automatic Combat**: Fight zombies with equipped weapons
 - **Crafting System**: Combine materials to create useful items
-- **Inventory Management**: Collect and use items strategically
+- **Inventory Management**: Collect and use items strategically with weight limits
 - **Save System**: Auto-save and manual save functionality
 
 ### Locations to Explore
-- **Your Shelter**: Safe haven where you can rest and recover
-- **Convenience Store**: Food and basic supplies
-- **Pharmacy**: Medical supplies and medicine
-- **Hardware Store**: Tools, weapons, and crafting materials
-- **Residential Area**: Abandoned homes with mixed loot
-- **Warehouse**: High-risk, high-reward location
+- **Your Shelter**: Safe haven where you can rest and recover (always unlocked)
+- **Convenience Store**: Food and basic supplies (0.5km, 1h travel)
+- **Pharmacy**: Medical supplies and medicine (1km, 2h travel) 🔒 *Discover to unlock*
+- **Hardware Store**: Tools, weapons, and crafting materials (0.6km, 1h travel)
+- **Residential Area**: Abandoned homes with mixed loot (1.2km, 2h travel) 🔒 *Discover to unlock*
+- **Warehouse**: High-risk, high-reward location (2km, 3h travel) 🔒 *Discover to unlock*
+- **Abandoned Hospital**: Extremely dangerous, rich medical supplies (2.5km, 3h travel) 🔒 *Discover to unlock*
 
 ### Items & Resources
 - **Food**: Canned food, chocolate, MREs to reduce hunger
@@ -28,8 +33,17 @@ A post-apocalyptic zombie survival game inspired by Buried Town. Manage your res
 - **Materials**: Wood, metal, cloth, rope for crafting
 
 ### Game Mechanics
-- Each action costs time and energy
-- Stats decay over time
+- **Travel System**: Each location has travel time and energy cost
+- **Weight Limits**: Can only carry 20kg per expedition - items have different weights
+- **Random Encounters**: 15% base chance of zombie ambush during travel (scales with distance)
+- **Location Discovery**: 15% chance to discover new location while traveling
+- **Expedition Flow**:
+  1. Select location on map
+  2. Travel there (costs time & energy, risk of encounter)
+  3. Explore/Scavenge (costs time, combat likely)
+  4. Choose what to carry back (weight limit!)
+  5. Travel home (costs time & energy, risk of encounter again)
+- Stats decay over time automatically
 - Higher danger locations have better loot but more zombies
 - Better weapons deal more damage in combat
 - Rest at your shelter to recover energy and HP
@@ -52,13 +66,16 @@ A post-apocalyptic zombie survival game inspired by Buried Town. Manage your res
 - **Menu**: Save game or return to main menu
 
 ### Tips for Survival
-1. Keep your hunger below 80 to avoid HP loss
-2. Don't let energy drop too low or you'll be exhausted
-3. Stock up on food and medicine before exploring dangerous areas
-4. Better weapons make combat much safer
-5. Balance risk vs. reward when choosing locations
-6. Rest regularly at your shelter
-7. Time is precious - plan your actions carefully
+1. **Plan Expeditions Carefully**: Account for travel time BOTH WAYS plus exploration time
+2. **Energy Management**: Make sure you have enough energy to return home safely
+3. **Weight Matters**: Lighter items (food, cloth, pills) = more items you can carry
+4. **Random Encounters**: You can be attacked during travel - keep HP high before expeditions
+5. **Location Discovery**: Travel often to unlock new locations (15% chance per trip)
+6. **Prioritize Loot**: Medicine and food are lighter than materials and weapons
+7. **Keep hunger below 80**: Or you'll lose HP over time
+8. **Don't get stranded**: Always have enough energy to travel back to shelter
+9. **Rest regularly**: Your shelter is the only place to recover
+10. **Time is precious**: Every expedition takes 4-10+ hours total (travel + exploration + return)
 
 ## Technical Details
 
