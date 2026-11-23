@@ -321,57 +321,57 @@ const ContainerTypes = {
     }
 };
 
-// Area definitions for each location (multiple searchable areas per location)
+// Area definitions for each location (map-based exploration with connections)
 const LocationAreas = {
     'convenience_store': [
-        { name: 'Front Counter', containerType: 'open', zombieChance: 0.3, itemChance: 0.7 },
-        { name: 'Shelves', containerType: 'open', zombieChance: 0.2, itemChance: 0.8 },
-        { name: 'Storage Room', containerType: 'box', zombieChance: 0.5, itemChance: 0.6 },
-        { name: 'Back Office', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.5 },
-        { name: 'Employee Lockers', containerType: 'locker', zombieChance: 0.2, itemChance: 0.7 }
+        { id: 0, name: 'Front Counter', containerType: 'open', zombieChance: 0.3, itemChance: 0.7, unlocks: [1, 2], position: { x: 150, y: 200 } },
+        { id: 1, name: 'Shelves', containerType: 'open', zombieChance: 0.2, itemChance: 0.8, unlocks: [3], position: { x: 350, y: 150 } },
+        { id: 2, name: 'Storage Room', containerType: 'box', zombieChance: 0.5, itemChance: 0.6, unlocks: [3], position: { x: 350, y: 250 } },
+        { id: 3, name: 'Back Office', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.5, unlocks: [4], position: { x: 550, y: 200 } },
+        { id: 4, name: 'Employee Lockers', containerType: 'locker', zombieChance: 0.2, itemChance: 0.7, unlocks: [], position: { x: 700, y: 200 } }
     ],
     'pharmacy': [
-        { name: 'Pharmacy Counter', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.8 },
-        { name: 'Medicine Aisles', containerType: 'open', zombieChance: 0.5, itemChance: 0.7 },
-        { name: 'Prescription Room', containerType: 'locker', zombieChance: 0.6, itemChance: 0.9 },
-        { name: 'Storage Closet', containerType: 'box', zombieChance: 0.4, itemChance: 0.6 },
-        { name: 'Manager Office', containerType: 'cabinet', zombieChance: 0.3, itemChance: 0.5 },
-        { name: 'Safe', containerType: 'safe', zombieChance: 0.2, itemChance: 0.9 }
+        { id: 0, name: 'Pharmacy Counter', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.8, unlocks: [1, 2], position: { x: 150, y: 200 } },
+        { id: 1, name: 'Medicine Aisles', containerType: 'open', zombieChance: 0.5, itemChance: 0.7, unlocks: [3], position: { x: 300, y: 100 } },
+        { id: 2, name: 'Prescription Room', containerType: 'locker', zombieChance: 0.6, itemChance: 0.9, unlocks: [3, 4], position: { x: 300, y: 300 } },
+        { id: 3, name: 'Storage Closet', containerType: 'box', zombieChance: 0.4, itemChance: 0.6, unlocks: [5], position: { x: 500, y: 150 } },
+        { id: 4, name: 'Manager Office', containerType: 'cabinet', zombieChance: 0.3, itemChance: 0.5, unlocks: [5], position: { x: 500, y: 250 } },
+        { id: 5, name: 'Safe', containerType: 'safe', zombieChance: 0.2, itemChance: 0.9, unlocks: [], position: { x: 700, y: 200 } }
     ],
     'hardware_store': [
-        { name: 'Tool Section', containerType: 'open', zombieChance: 0.3, itemChance: 0.9 },
-        { name: 'Storage Area', containerType: 'crate', zombieChance: 0.5, itemChance: 0.8 },
-        { name: 'Lumber Yard', containerType: 'open', zombieChance: 0.4, itemChance: 0.7 },
-        { name: 'Supply Closet', containerType: 'cabinet', zombieChance: 0.3, itemChance: 0.6 },
-        { name: 'Employee Break Room', containerType: 'locker', zombieChance: 0.2, itemChance: 0.5 }
+        { id: 0, name: 'Tool Section', containerType: 'open', zombieChance: 0.3, itemChance: 0.9, unlocks: [1, 2], position: { x: 150, y: 200 } },
+        { id: 1, name: 'Storage Area', containerType: 'crate', zombieChance: 0.5, itemChance: 0.8, unlocks: [3], position: { x: 350, y: 120 } },
+        { id: 2, name: 'Lumber Yard', containerType: 'open', zombieChance: 0.4, itemChance: 0.7, unlocks: [3], position: { x: 350, y: 280 } },
+        { id: 3, name: 'Supply Closet', containerType: 'cabinet', zombieChance: 0.3, itemChance: 0.6, unlocks: [4], position: { x: 550, y: 200 } },
+        { id: 4, name: 'Employee Break Room', containerType: 'locker', zombieChance: 0.2, itemChance: 0.5, unlocks: [], position: { x: 700, y: 200 } }
     ],
     'residential': [
-        { name: 'Living Room', containerType: 'open', zombieChance: 0.5, itemChance: 0.6 },
-        { name: 'Kitchen', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.7 },
-        { name: 'Bedroom', containerType: 'cabinet', zombieChance: 0.6, itemChance: 0.6 },
-        { name: 'Bathroom', containerType: 'cabinet', zombieChance: 0.3, itemChance: 0.5 },
-        { name: 'Garage', containerType: 'box', zombieChance: 0.4, itemChance: 0.8 },
-        { name: 'Basement', containerType: 'box', zombieChance: 0.7, itemChance: 0.7 },
-        { name: 'Master Bedroom Safe', containerType: 'safe', zombieChance: 0.2, itemChance: 0.9 }
+        { id: 0, name: 'Living Room', containerType: 'open', zombieChance: 0.5, itemChance: 0.6, unlocks: [1, 2, 3], position: { x: 150, y: 200 } },
+        { id: 1, name: 'Kitchen', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.7, unlocks: [4], position: { x: 300, y: 100 } },
+        { id: 2, name: 'Bedroom', containerType: 'cabinet', zombieChance: 0.6, itemChance: 0.6, unlocks: [5, 6], position: { x: 300, y: 200 } },
+        { id: 3, name: 'Bathroom', containerType: 'cabinet', zombieChance: 0.3, itemChance: 0.5, unlocks: [], position: { x: 300, y: 300 } },
+        { id: 4, name: 'Garage', containerType: 'box', zombieChance: 0.4, itemChance: 0.8, unlocks: [5], position: { x: 500, y: 100 } },
+        { id: 5, name: 'Basement', containerType: 'box', zombieChance: 0.7, itemChance: 0.7, unlocks: [], position: { x: 650, y: 150 } },
+        { id: 6, name: 'Master Bedroom Safe', containerType: 'safe', zombieChance: 0.2, itemChance: 0.9, unlocks: [], position: { x: 500, y: 250 } }
     ],
     'warehouse': [
-        { name: 'Loading Dock', containerType: 'open', zombieChance: 0.6, itemChance: 0.7 },
-        { name: 'Main Storage', containerType: 'crate', zombieChance: 0.7, itemChance: 0.9 },
-        { name: 'Shipping Area', containerType: 'box', zombieChance: 0.5, itemChance: 0.8 },
-        { name: 'Office Area', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.6 },
-        { name: 'Break Room', containerType: 'locker', zombieChance: 0.3, itemChance: 0.5 },
-        { name: 'Forklift Zone', containerType: 'open', zombieChance: 0.6, itemChance: 0.7 },
-        { name: 'Manager Office', containerType: 'safe', zombieChance: 0.2, itemChance: 0.9 }
+        { id: 0, name: 'Loading Dock', containerType: 'open', zombieChance: 0.6, itemChance: 0.7, unlocks: [1, 2], position: { x: 150, y: 200 } },
+        { id: 1, name: 'Main Storage', containerType: 'crate', zombieChance: 0.7, itemChance: 0.9, unlocks: [3, 4], position: { x: 350, y: 150 } },
+        { id: 2, name: 'Shipping Area', containerType: 'box', zombieChance: 0.5, itemChance: 0.8, unlocks: [3], position: { x: 350, y: 250 } },
+        { id: 3, name: 'Office Area', containerType: 'cabinet', zombieChance: 0.4, itemChance: 0.6, unlocks: [5, 6], position: { x: 550, y: 150 } },
+        { id: 4, name: 'Break Room', containerType: 'locker', zombieChance: 0.3, itemChance: 0.5, unlocks: [5], position: { x: 550, y: 250 } },
+        { id: 5, name: 'Forklift Zone', containerType: 'open', zombieChance: 0.6, itemChance: 0.7, unlocks: [6], position: { x: 650, y: 200 } },
+        { id: 6, name: 'Manager Office', containerType: 'safe', zombieChance: 0.2, itemChance: 0.9, unlocks: [], position: { x: 750, y: 200 } }
     ],
     'hospital': [
-        { name: 'Emergency Room', containerType: 'open', zombieChance: 0.8, itemChance: 0.8 },
-        { name: 'Pharmacy', containerType: 'locker', zombieChance: 0.7, itemChance: 0.9 },
-        { name: 'Surgery Room', containerType: 'cabinet', zombieChance: 0.7, itemChance: 0.9 },
-        { name: 'Patient Rooms', containerType: 'cabinet', zombieChance: 0.6, itemChance: 0.6 },
-        { name: 'Supply Closet', containerType: 'locker', zombieChance: 0.5, itemChance: 0.8 },
-        { name: 'Morgue', containerType: 'box', zombieChance: 0.9, itemChance: 0.7 },
-        { name: 'Lab', containerType: 'cabinet', zombieChance: 0.6, itemChance: 0.8 },
-        { name: 'Admin Office', containerType: 'safe', zombieChance: 0.3, itemChance: 0.9 }
+        { id: 0, name: 'Emergency Room', containerType: 'open', zombieChance: 0.8, itemChance: 0.8, unlocks: [1, 2, 3], position: { x: 150, y: 200 } },
+        { id: 1, name: 'Pharmacy', containerType: 'locker', zombieChance: 0.7, itemChance: 0.9, unlocks: [4, 5], position: { x: 350, y: 100 } },
+        { id: 2, name: 'Surgery Room', containerType: 'cabinet', zombieChance: 0.7, itemChance: 0.9, unlocks: [6], position: { x: 350, y: 200 } },
+        { id: 3, name: 'Patient Rooms', containerType: 'cabinet', zombieChance: 0.6, itemChance: 0.6, unlocks: [4], position: { x: 350, y: 300 } },
+        { id: 4, name: 'Supply Closet', containerType: 'locker', zombieChance: 0.5, itemChance: 0.8, unlocks: [7], position: { x: 550, y: 150 } },
+        { id: 5, name: 'Morgue', containerType: 'box', zombieChance: 0.9, itemChance: 0.7, unlocks: [6], position: { x: 550, y: 50 } },
+        { id: 6, name: 'Lab', containerType: 'cabinet', zombieChance: 0.6, itemChance: 0.8, unlocks: [7], position: { x: 550, y: 250 } },
+        { id: 7, name: 'Admin Office', containerType: 'safe', zombieChance: 0.3, itemChance: 0.9, unlocks: [], position: { x: 700, y: 200 } }
     ]
 };
 

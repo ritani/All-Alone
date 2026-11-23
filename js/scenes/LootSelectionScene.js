@@ -16,12 +16,16 @@ class LootSelectionScene extends Phaser.Scene {
         // Dark overlay
         this.add.rectangle(0, 0, 800, 600, 0x000000, 0.95).setOrigin(0, 0);
 
+        // Create Vital Stats HUD
+        this.vitalStatsHUD = new VitalStatsHUD(this, this.gameSceneRef.gameState);
+        this.vitalStatsHUD.create();
+
         // Create ExpeditionHUD
         this.expeditionHUD = new ExpeditionHUD(this, this.gameSceneRef.expeditionManager);
         this.expeditionHUD.create();
 
         // Title
-        this.add.text(centerX, 90, 'LOOT FOUND', {
+        this.add.text(centerX, 90, 'RETURN TO SHELTER', {
             fontSize: '28px',
             fontFamily: 'Arial Black',
             color: '#00ff00'
@@ -208,7 +212,10 @@ class LootSelectionScene extends Phaser.Scene {
     }
 
     shutdown() {
-        // Clean up HUD when scene stops
+        // Clean up HUDs when scene stops
+        if (this.vitalStatsHUD) {
+            this.vitalStatsHUD.destroy();
+        }
         if (this.expeditionHUD) {
             this.expeditionHUD.destroy();
         }
