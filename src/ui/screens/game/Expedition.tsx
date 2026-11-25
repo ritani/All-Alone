@@ -6,14 +6,17 @@
  */
 import { useState } from 'preact/hooks';
 import type { ActionView, Band, FoeView, ItemView, RoomSummary, View } from '../../../core';
-import { ActionButton, ActionList } from '../../components/ActionButton';
+import { ActionButton } from '../../components/ActionButton';
 import { Button } from '../../components/Button';
 import { Hairline } from '../../components/Hairline';
 import { Icon } from '../../components/Icon';
 import { Meter } from '../../components/Meter';
 import { PlaceArt } from '../../components/PlaceArt';
+import { Fold, ListRow } from '../../components/ListRow';
 import { Rule } from '../../components/Rule';
-import { duration, titleCase } from '../../format';
+import { Sheet } from '../../components/Sheet';
+import { duration, titleCase, withQty } from '../../format';
+import { Provisions } from './HouseTab';
 import { MapDrawing } from './MapTab';
 import { ChoiceCard, Choices, MoveRow, PhaseHead, itemAct, kg, pick, type OnAct } from './Parts';
 import { KIND_NAMES, KIND_ORDER } from './StoreTab';
@@ -28,46 +31,104 @@ function Load({ view }: { view: View }) {
   const inv = view.inventory;
   const full = inv.capacity > 0 && inv.carried / inv.capacity >= 0.95;
   return (
-    <div class="load">
-      <div class="figure-line">
-        <span class="label">
-          <Icon name="pack" size={16} /> Carrying
-        </span>
-        <span class="num">{inv.carry_label}</span>
-      </div>
+    <div class="figure load">
+      <span class="figure__name">
+        <Icon name="pack" size={16} /> Carrying
+      </span>
+      <span class="num">{inv.carry_label}</span>
       <Hairline value={inv.carried} max={inv.capacity} label={`Carrying ${inv.carry_label}`} danger={full} />
     </div>
   );
 }
 
-/** Eating, drinking and medicine while out: folded away until wanted. */
-function Provisions({ actions, onAct, open: startOpen = false }: { actions: ActionView[]; onAct: OnAct; open?: boolean }) {
-  const [open, setOpen] = useState(startOpen);
-  const list = actions.filter((a) => a.group === 'survive' && a.enabled);
-  if (list.length === 0) return null;
-  return (
-    <section class="section">
-      <button type="button" class="disclosure" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <Icon name="food" size={20} />
-        <span class="disclosure__name">Eat, drink, mend</span>
-        <span class="num">{list.length}</span>
-        <Icon name="down" size={16} class={open ? 'disclosure__icon disclosure__icon--open' : 'disclosure__icon'} />
-      </button>
-      {open && <ActionList actions={list} onAct={onAct} />}
-    </section>
-  );
-}
-
-function byKind(items: ItemView[]): [string, ItemView[]][] {
-  const kinds = [...new Set(items.map((i) => i.kind))].sort(
-    (a, b) => (KIND_ORDER.indexOf(a) + 1 || 99) - (KIND_ORDER.indexOf(b) + 1 || 99),
-  );
-  return kinds.map((k) => [k, items.filter((i) => i.kind === k)]);
-}
-
 // ------------------------------------------------------------------ packing
 
-const FOLDED_KINDS = new Set(['material', 'seed']);
+/** Kinds that are usually carried out: their groups start open. */
+const CARRIED_KINDS = ['food', 'drink', 'medicine', 'light', 'weapon', 'ammo'];
+const packOpen = new Set<string>(CARRIED_KINDS);
+
+interface PackLine {
+  id: string;
+  name: string;
+  icon: string;
+  kind: string;
+  /** Tenths of a kilogram, each. */
+  weight: number;
+  detail: string;
+  desc: string;
+  packed: number;
+  stored: number;
+}
+
+/** Everything that could go in the pack, store and pack together, one line per item. */
+function packLines(store: ItemView[], pack: ItemView[]): PackLine[] {
+  const by = new Map<string, PackLine>();
+  const add = (it: ItemView, where: 'packed' | 'stored') => {
+    const line = by.get(it.id) ?? {
+      id: it.id,
+      name: it.name,
+      icon: it.icon,
+      kind: it.kind,
+      weight: it.weight,
+      detail: it.detail,
+      desc: it.desc,
+      packed: 0,
+      stored: 0,
+    };
+    line[where] += it.qty;
+    by.set(it.id, line);
+  };
+  pack.forEach((it) => add(it, 'packed'));
+  store.forEach((it) => add(it, 'stored'));
+  return [...by.values()];
+}
+
+/** One thing to take or leave: the packed count between minus and plus. */
+function PackRow({ line, acts, onAct, onOpen }: { line: PackLine; acts: ActionView[]; onAct: OnAct; onOpen: () => void }) {
+  const add = itemAct(acts, 'pack', line.id);
+  const less = itemAct(acts, 'unpack', line.id);
+  const canAdd = add?.enabled === true;
+  const canLess = less?.enabled === true;
+  const why = !canAdd && line.stored > 0 ? add?.reason : null;
+  return (
+    <li class={line.packed > 0 ? 'prow prow--in' : 'prow'}>
+      <button type="button" class="prow__item" onClick={onOpen}>
+        <Icon name={line.icon} size={20} class="prow__icon" />
+        <span class="prow__main">
+          <span class="prow__name">{line.name}</span>
+          <span class="prow__meta">
+            <span class="num">{kg(line.weight)}</span>
+            {line.stored > 0 && <span class="num"> · {line.stored} in store</span>}
+            {why && <span> · {why}</span>}
+          </span>
+        </span>
+      </button>
+      <span class="stepper" role="group" aria-label={`${line.name}: ${line.packed} packed`}>
+        <button
+          type="button"
+          class="stepper__btn"
+          aria-label={`Leave one ${line.name}`}
+          disabled={!canLess}
+          onClick={() => less && onAct(withQty(less.action, 1))}
+        >
+          <Icon name="minus" size={16} />
+        </button>
+        <output class="stepper__value num" aria-live="polite">
+          {line.packed}
+        </output>
+        <button
+          type="button"
+          class="stepper__btn"
+          aria-label={`Pack one ${line.name}`}
+          disabled={!canAdd}
+          onClick={() => add && onAct(withQty(add.action, 1))}
+        >
+          <Icon name="plus" size={16} />
+        </button>
+      </span>
+    </li>
+  );
+}
 
 export function PackingPanel({ view, onAct }: PhaseProps) {
   const p = view.packing;
@@ -76,87 +137,98 @@ export function PackingPanel({ view, onAct }: PhaseProps) {
   const depart = pick(acts, 'depart');
   const cancel = pick(acts, 'cancel_trip');
   const dog = pick(acts, 'take_dog');
-  const [showAll, setShowAll] = useState(false);
+  const [, redraw] = useState(0);
+  const [item, setItem] = useState<string | null>(null);
   if (!p) return null;
-  const meta = [
-    `${duration(p.minutes)} walk`,
-    p.unvisited ? 'not been there' : `${p.rooms_searched}/${p.rooms} rooms searched`,
-  ].join(' · ');
-  const groups = byKind(inv.store);
-  // Building stock and seed are rarely carried out: they fold away.
-  const shown = showAll ? groups : groups.filter(([k]) => !FOLDED_KINDS.has(k));
+  const lines = packLines(inv.store, inv.pack);
+  const kinds = [...new Set(lines.map((l) => l.kind))].sort(
+    (a, b) => (KIND_ORDER.indexOf(a) + 1 || 99) - (KIND_ORDER.indexOf(b) + 1 || 99),
+  );
+  const toggle = (k: string) => {
+    if (packOpen.has(k)) packOpen.delete(k);
+    else packOpen.add(k);
+    redraw((n) => n + 1);
+  };
+  const open = item ? lines.find((l) => l.id === item) : undefined;
   return (
     <div class="phase phase--packing">
       <PhaseHead kicker="Packing" title={`To ${p.name}`} focusKey={`pack-${p.place}`}>
-        <p class="label phase__meta">{meta}</p>
+        <p class="phase__meta">
+          <Icon name="clock" size={16} /> <span class="num">{duration(p.minutes)}</span>
+          {p.unvisited ? ' · not been there' : ` · ${p.rooms_searched}/${p.rooms} rooms searched`}
+        </p>
       </PhaseHead>
 
       <Load view={view} />
 
-      <section class="section" aria-label="What to bring">
-        <ul class="needs">
-          <Need met={p.has_light} icon="light" text={p.has_light ? 'A light, packed.' : 'No light packed.'} />
-          <Need met={p.has_weapon} icon="blade" text={p.has_weapon ? 'Something to strike with.' : 'Nothing to strike with.'} />
-          <Need met={p.meals > 0} icon="food" text={p.meals > 0 ? `${p.meals} ${p.meals === 1 ? 'meal' : 'meals'} packed.` : 'No food packed.'} />
-          <Need met={p.water > 0} icon="water" text={p.water > 0 ? `${p.water} clean water packed.` : 'No clean water packed.'} />
-        </ul>
-        {p.needs.length > 0 && (
-          <>
-            <p class="label needs__head">What you know it calls for</p>
-            <ul class="needs">
-              {p.needs.map((n) => (
-                <Need key={n.id} met={n.met} icon={n.icon} text={n.text} />
-              ))}
-            </ul>
-          </>
-        )}
-        {p.unvisited && <p class="prose prose--dim">You do not know what is inside.</p>}
-      </section>
+      <ul class="needs" aria-label="What to bring">
+        <Need met={p.has_light} icon="light" text="Light" />
+        <Need met={p.has_weapon} icon="blade" text="Weapon" />
+        <Need met={p.meals > 0} icon="food" text={p.meals > 0 ? `${p.meals} ${p.meals === 1 ? 'meal' : 'meals'}` : 'Food'} />
+        <Need met={p.water > 0} icon="water" text={p.water > 0 ? `${p.water} water` : 'Water'} />
+        {p.needs.map((n) => (
+          <Need key={n.id} met={n.met} icon={n.icon} text={n.text} wide />
+        ))}
+      </ul>
 
       {dog && (
-        <section class="section">
-          <div class="figure-line">
-            <span class="label">
-              <Icon name="sigil_dog" size={16} /> The dog
-            </span>
-            <span>{p.take_dog ? 'Coming' : 'Staying'}</span>
-          </div>
-          <ActionButton a={dog} onAct={onAct} />
-        </section>
+        <ListRow
+          icon="sigil_dog"
+          title="The dog"
+          aside={p.take_dog ? 'Coming' : 'Staying'}
+          onClick={dog.enabled ? () => onAct(dog.action) : undefined}
+          label={`${dog.label}. The dog is ${p.take_dog ? 'coming' : 'staying'}.`}
+        />
       )}
 
-      <section class="section">
-        <Rule>In the pack</Rule>
-        {inv.pack.length === 0 ? (
-          <p class="prose prose--dim">Empty.</p>
-        ) : (
-          <ul class="moves">
-            {inv.pack.map((it) => (
-              <MoveRow key={it.id} item={it} a={itemAct(acts, 'unpack', it.id)} verb="Leave" onAct={onAct} aside={it.weight_label} />
-            ))}
-          </ul>
-        )}
+      <section class="section folds" aria-label="What to take">
+        {lines.length === 0 && <p class="prose prose--dim">Nothing to take.</p>}
+        {kinds.map((k) => {
+          const list = lines.filter((l) => l.kind === k);
+          const packed = list.reduce((n, l) => n + l.packed, 0);
+          return (
+            <Fold
+              key={k}
+              title={KIND_NAMES[k] ?? k}
+              count={<span class="num">{packed > 0 ? `${packed} packed` : list.length}</span>}
+              open={packOpen.has(k) || packed > 0}
+              onToggle={() => toggle(k)}
+            >
+              <ul class="prows">
+                {list.map((l) => (
+                  <PackRow key={l.id} line={l} acts={acts} onAct={onAct} onOpen={() => setItem(l.id)} />
+                ))}
+              </ul>
+            </Fold>
+          );
+        })}
       </section>
 
-      <section class="section">
-        <Rule>In the store</Rule>
-        {inv.store.length === 0 && <p class="prose prose--dim">Nothing left to take.</p>}
-        {shown.map(([k, items]) => (
-          <div key={k} class="moves__group">
-            <p class="label moves__kind">{KIND_NAMES[k] ?? k}</p>
-            <ul class="moves">
-              {items.map((it) => (
-                <MoveRow key={it.id} item={it} a={itemAct(acts, 'pack', it.id)} verb="Pack" onAct={onAct} aside={it.qty > 1 ? `${kg(it.weight)} each` : kg(it.weight)} />
-              ))}
-            </ul>
-          </div>
-        ))}
-        {groups.length > shown.length && (
-          <button type="button" class="link link--small" onClick={() => setShowAll(true)}>
-            Show materials and seed too
-          </button>
-        )}
-      </section>
+      {open && (
+        <Sheet title={open.name} onClose={() => setItem(null)}>
+          {open.detail && <p class="item__detail num">{open.detail}</p>}
+          <p class="prose prose--dim">{open.desc}</p>
+          <ul class="moves">
+            {open.stored > 0 && (
+              <MoveRow
+                item={{ id: open.id, name: 'From the store', icon: 'store', qty: open.stored }}
+                a={itemAct(acts, 'pack', open.id)}
+                verb="Pack"
+                onAct={onAct}
+                aside={`${kg(open.weight)} each`}
+              />
+            )}
+            {open.packed > 0 && (
+              <MoveRow
+                item={{ id: open.id, name: 'In the pack', icon: 'pack', qty: open.packed }}
+                a={itemAct(acts, 'unpack', open.id)}
+                verb="Leave"
+                onAct={onAct}
+              />
+            )}
+          </ul>
+        </Sheet>
+      )}
 
       <div class="phase__go phase__go--row">
         {cancel && (
@@ -174,9 +246,10 @@ export function PackingPanel({ view, onAct }: PhaseProps) {
   );
 }
 
-function Need({ met, icon, text }: { met: boolean; icon: string; text: string }) {
+function Need({ met, icon, text, wide = false }: { met: boolean; icon: string; text: string; wide?: boolean }) {
+  const cls = ['need', met ? 'need--met' : '', wide ? 'need--wide' : ''].filter(Boolean).join(' ');
   return (
-    <li class={met ? 'need need--met' : 'need'}>
+    <li class={cls}>
       <Icon name={icon} size={16} />
       <span class="need__text">{text}</span>
       <Icon name={met ? 'check' : 'close'} size={16} label={met ? 'Have it' : 'Missing'} />
@@ -200,8 +273,8 @@ export function TravelPanel({ view, onAct }: PhaseProps) {
   return (
     <div class="phase phase--travelling">
       <PhaseHead kicker="On the road" title={t.homeward ? `Home from ${t.name}` : `To ${t.name}`} focusKey={`road-${t.place}-${t.homeward}`}>
-        <p class="label phase__meta">
-          {view.clock} · {light}
+        <p class="phase__meta">
+          <span class="num">{view.clock}</span> · {light}
         </p>
       </PhaseHead>
       <figure class="road">
@@ -220,42 +293,52 @@ export function TravelPanel({ view, onAct }: PhaseProps) {
         <ChoiceCard a={walk} onAct={onAct} title="Walk" lines={arrive(t.arrive_at, t.arrive_dark)} />
         <ChoiceCard a={hurry} onAct={onAct} title="Hurry" lines={arrive(t.hurry_arrive_at, t.hurry_arrive_dark)} />
       </Choices>
-      <p class="prose prose--dim road__note">
-        Hurrying is quicker and costs you, and it carries. Anything on the road happens on the way.
-      </p>
-      {back && <ActionList actions={[back]} onAct={onAct} />}
-      <Provisions actions={view.actions} onAct={onAct} />
+      {back && <ActionButton a={back} onAct={onAct} />}
+      <Provisions view={view} onAct={onAct} />
     </div>
   );
 }
 
 // ------------------------------------------------------------------ a place
 
-const SEARCH_NAME = { none: 'Not searched', partial: 'Partly searched', full: 'Searched through' } as const;
+const SEARCH_NAME = { none: 'Not searched', partial: 'Part searched', full: 'Searched' } as const;
 
-function RouteStop({ r }: { r: RoomSummary }) {
-  const unseen = !r.entered && r.name === 'Further in';
-  const cls = ['stop', r.here ? 'stop--here' : '', r.entered ? 'stop--entered' : '', unseen ? 'stop--unseen' : '']
-    .filter(Boolean)
-    .join(' ');
-  const flags: { icon: string; text: string; danger?: boolean }[] = [];
-  if (r.locked) flags.push({ icon: 'lock', text: 'Locked' });
-  if (r.dark) flags.push({ icon: 'light', text: 'Dark' });
-  if (r.flooded) flags.push({ icon: 'water', text: 'Flooded' });
-  if (r.search === 'full') flags.push({ icon: 'check', text: 'Searched' });
-  else if (r.search === 'partial') flags.push({ icon: 'pack', text: 'Part searched' });
+function stopFlags(r: RoomSummary): string[] {
+  const flags: string[] = [];
+  if (r.locked) flags.push('locked');
+  if (r.dark) flags.push('dark');
+  if (r.flooded) flags.push('flooded');
+  if (r.search === 'full') flags.push('searched');
+  else if (r.search === 'partial') flags.push('part searched');
+  return flags;
+}
+
+/**
+ * The rooms as a short route across the page: outside on the left, each room
+ * a square, where you are a square in a square. Names live in the list's
+ * accessible text; the line under it names where you are and what is next.
+ */
+function Route({ rooms, here }: { rooms: RoomSummary[]; here: number | null }) {
+  const stops = [{ index: -1, name: 'Outside', entered: true, here: here === null, dark: false, flooded: false, locked: false, search: 'none' as const }, ...rooms];
   return (
-    <li class={cls} aria-current={r.here ? 'location' : undefined}>
-      <span class="stop__mark" aria-hidden="true" />
-      <span class="stop__name">{r.name}</span>
-      <span class="stop__flags">
-        {flags.map((f) => (
-          <span key={f.text} class="stop__flag" title={f.text}>
-            <Icon name={f.icon} size={16} label={f.text} />
-          </span>
-        ))}
-      </span>
-    </li>
+    <ol class="route" aria-label="Rooms, in order">
+      {stops.map((r) => {
+        const unseen = !r.entered && r.name === 'Further in';
+        const cls = ['stop', r.here ? 'stop--here' : '', r.entered ? 'stop--entered' : '', unseen ? 'stop--unseen' : '', r.locked ? 'stop--locked' : '']
+          .filter(Boolean)
+          .join(' ');
+        const flags = r.index >= 0 ? stopFlags(r) : [];
+        return (
+          <li key={r.index} class={cls} aria-current={r.here ? 'location' : undefined} title={r.name}>
+            <span class="stop__mark" aria-hidden="true" />
+            <span class="visually-hidden">
+              {r.name}
+              {flags.length > 0 ? `, ${flags.join(', ')}` : ''}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -280,37 +363,35 @@ export function SitePanel({ view, onAct }: PhaseProps) {
   // The light is for this room if it is dark and unlit, else for the dark ahead.
   const lightHere = light && room && room.dark && !room.lit;
   const lightAhead = light && !lightHere;
+  const state = room
+    ? [room.dark ? (room.lit ? 'Lit' : 'Dark') : '', room.flooded ? 'Flooded' : '', SEARCH_NAME[room.search]].filter(Boolean)
+    : [s.widow_here ? 'The widow is on the steps' : ''].filter(Boolean);
+  const entered = s.rooms.filter((r) => r.entered).length;
   return (
     <div class="phase phase--site">
       <figure class={room ? 'site__art site__art--small' : 'site__art'}>
         <PlaceArt place={s.place} />
       </figure>
-      <PhaseHead
-        kicker={outside ? 'Outside' : s.name}
-        title={room ? room.name : s.name}
-        focusKey={`site-${s.place}-${room?.index ?? -1}`}
-      >
+      <PhaseHead kicker={outside ? 'Outside' : s.name} title={room ? room.name : s.name} focusKey={`site-${s.place}-${room?.index ?? -1}`}>
         <p class="prose site__line">{room ? room.desc : s.desc}</p>
       </PhaseHead>
 
-      {room && (
-        <p class="label site__state">
-          {[
-            room.dark ? (room.lit ? 'Lit' : 'Dark') : '',
-            room.flooded ? 'Flooded' : '',
-            SEARCH_NAME[room.search],
-            `Noise here ${s.site_noise}`,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
+      <div class="site__where">
+        <Route rooms={s.rooms} here={room ? room.index : null} />
+        <p class="site__state">
+          <span>
+            <Icon name="noise" size={16} /> <span class="visually-hidden">Noise here </span>
+            <span class="num">{s.site_noise}</span>
+          </span>
+          {state.map((t) => (
+            <span key={t}> · {t}</span>
+          ))}
+          <span class="num site__count">
+            {' '}
+            · {entered}/{s.rooms.length} rooms
+          </span>
         </p>
-      )}
-      {outside && (
-        <p class="label site__state">
-          {`Noise here ${s.site_noise}`}
-          {s.widow_here ? ' · The widow is on the steps' : ''}
-        </p>
-      )}
+      </div>
 
       {room && room.dormant.length > 0 && (
         <section class="section">
@@ -327,11 +408,7 @@ export function SitePanel({ view, onAct }: PhaseProps) {
         </section>
       )}
 
-      {trade && (
-        <section class="section">
-          <ActionButton a={trade} onAct={onAct} />
-        </section>
-      )}
+      {trade && <ActionButton a={trade} onAct={onAct} />}
 
       {room && room.pile.length > 0 && (
         <section class="section">
@@ -351,8 +428,8 @@ export function SitePanel({ view, onAct }: PhaseProps) {
           <Rule>Search</Rule>
           {lightHere && <ActionButton a={light} onAct={onAct} />}
           <Choices label="How to search">
-            <ChoiceCard a={careful} onAct={onAct} title="Carefully" lines={[{ text: 'Slow. Finds papers.' }]} />
-            <ChoiceCard a={fast} onAct={onAct} title="Fast" lines={[{ text: 'Quick and loud.' }]} />
+            <ChoiceCard a={careful} onAct={onAct} title="Carefully" lines={[{ text: 'Finds papers.' }]} />
+            <ChoiceCard a={fast} onAct={onAct} title="Fast" />
           </Choices>
         </section>
       )}
@@ -369,45 +446,11 @@ export function SitePanel({ view, onAct }: PhaseProps) {
             </Choices>
           )}
           <Choices label="How to go in">
-            <ChoiceCard a={quiet} onAct={onAct} title="Quietly" lines={[{ text: 'Slow. No noise.' }]} />
-            <ChoiceCard a={loud} onAct={onAct} title="Fast" lines={[{ text: 'Quick. They may hear.' }]} />
+            <ChoiceCard a={quiet} onAct={onAct} title="Quietly" />
+            <ChoiceCard a={loud} onAct={onAct} title="Fast" />
           </Choices>
         </section>
       )}
-
-      <section class="section">
-        <Rule>{s.name}</Rule>
-        <ol class="route" aria-label="Rooms, in order">
-          <li class={outside ? 'stop stop--here stop--entered' : 'stop stop--entered'} aria-current={outside ? 'location' : undefined}>
-            <span class="stop__mark" aria-hidden="true" />
-            <span class="stop__name">Outside</span>
-            <span class="stop__flags" />
-          </li>
-          {s.rooms.map((r) => (
-            <RouteStop key={r.index} r={r} />
-          ))}
-        </ol>
-      </section>
-
-      {room && view.inventory.pack.length > 0 && (
-        <section class="section">
-          <button type="button" class="disclosure" aria-expanded={dropOpen} onClick={() => setDropOpen(!dropOpen)}>
-            <Icon name="pack" size={20} />
-            <span class="disclosure__name">Leave something here</span>
-            <span class="num">{kg(view.inventory.carried)}</span>
-            <Icon name="down" size={16} class={dropOpen ? 'disclosure__icon disclosure__icon--open' : 'disclosure__icon'} />
-          </button>
-          {dropOpen && (
-            <ul class="moves">
-              {view.inventory.pack.map((it) => (
-                <MoveRow key={it.id} item={it} a={itemAct(acts, 'drop', it.id)} verb="Leave" onAct={onAct} aside={it.weight_label} />
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      <Provisions actions={acts} onAct={onAct} />
 
       {moves.length > 0 && (
         <section class="section">
@@ -418,6 +461,28 @@ export function SitePanel({ view, onAct }: PhaseProps) {
             ))}
           </Choices>
         </section>
+      )}
+
+      <div class="lrows">
+        <Provisions view={view} onAct={onAct} />
+        {room && view.inventory.pack.length > 0 && (
+          <ListRow
+            icon="pack"
+            title="Leave something here"
+            aside={<span class="num">{kg(view.inventory.carried)}</span>}
+            onClick={() => setDropOpen(true)}
+          />
+        )}
+      </div>
+      {dropOpen && room && (
+        <Sheet title="Leave something here" onClose={() => setDropOpen(false)}>
+          <Load view={view} />
+          <ul class="moves">
+            {view.inventory.pack.map((it) => (
+              <MoveRow key={it.id} item={it} a={itemAct(acts, 'drop', it.id)} verb="Leave" onAct={onAct} aside={it.weight_label} />
+            ))}
+          </ul>
+        </Sheet>
       )}
     </div>
   );
@@ -457,18 +522,12 @@ function Foe({ f }: { f: FoeView }) {
       <div class="stilled__head">
         <Icon name={f.icon} size={24} />
         <span class="stilled__name">{titleCase(f.name)}</span>
-        <span class="label stilled__band">{BAND_NAME[f.band]}</span>
+        <span class="stilled__health">
+          <Hairline value={f.health} max={100} label={`${f.name}: ${f.health}% left in it`} danger={close} />
+        </span>
+        <span class="stilled__band">{BAND_NAME[f.band]}</span>
       </div>
       <Distance band={f.band} name={f.name} />
-      <div class="stilled__scale label" aria-hidden="true">
-        <span>Far</span>
-        <span>Near</span>
-        <span>Close</span>
-      </div>
-      <div class="stilled__health">
-        <span class="label">Left in it</span>
-        <Hairline value={f.health} max={100} label={`${f.name}: ${f.health}% left in it`} danger={close} />
-      </div>
     </li>
   );
 }
@@ -481,7 +540,6 @@ export function EncounterPanel({ view, onAct }: PhaseProps) {
   const fight = view.actions
     .filter((a) => a.group === 'fight')
     .sort((a, b) => FIGHT_ORDER.indexOf(a.action.type) - FIGHT_ORDER.indexOf(b.action.type));
-  const meds = view.actions.filter((a) => a.group === 'survive' && a.enabled);
   const health = view.vitals.find((v) => v.id === 'health');
   const nerve = view.vitals.find((v) => v.id === 'nerve');
   const kicker = [`Turn ${e.turn + 1}`, e.dark ? 'Dark' : '', e.gripped ? 'It has hold of you' : ''].filter(Boolean).join(' · ');
@@ -514,26 +572,23 @@ export function EncounterPanel({ view, onAct }: PhaseProps) {
       </div>
 
       <section class="enc__you" aria-label="You">
-        <div class="enc__kit">
-          <span class="label">
+        <div class="enc__meters">
+          {health && <Meter label="Health" value={health.value} icon="health" danger={15} />}
+          {nerve && <Meter label="Nerve" value={nerve.value} icon="nerve" danger={15} />}
+        </div>
+        <p class="enc__kit">
+          <span>
             <Icon name="blade" size={16} /> {e.weapon}
           </span>
           {e.gun && (
-            <span class={e.ammo === 0 ? 'label danger-text' : 'label'}>
-              <Icon name="gun" size={16} /> {e.gun}, {e.ammo} {e.ammo === 1 ? 'round' : 'rounds'}
+            <span class={e.ammo === 0 ? 'danger-text' : undefined}>
+              <Icon name="gun" size={16} /> {e.gun}, <span class="num">{e.ammo}</span> {e.ammo === 1 ? 'round' : 'rounds'}
             </span>
           )}
-        </div>
-        {health && <Meter label="Health" value={health.value} icon="health" danger={15} />}
-        {nerve && <Meter label="Nerve" value={nerve.value} icon="nerve" danger={15} />}
+        </p>
       </section>
 
-      {meds.length > 0 && (
-        <section class="section">
-          <Rule>Mend</Rule>
-          <ActionList actions={meds} onAct={onAct} />
-        </section>
-      )}
+      <Provisions view={view} onAct={onAct} />
     </div>
   );
 }
@@ -550,7 +605,7 @@ export function BarterPanel({ view, onAct }: PhaseProps) {
       <p class="prose barter__line">{b.line}</p>
 
       <div class="slate" aria-live="polite">
-        <span class="label">On the slate</span>
+        <span class="slate__name">On the slate</span>
         <span class="num slate__figure">{b.credit}</span>
       </div>
 

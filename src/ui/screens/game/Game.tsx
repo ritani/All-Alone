@@ -7,7 +7,7 @@ import { TabBar, type Tab } from '../../components/TabBar';
 import { CraftTab } from './CraftTab';
 import { Header } from './Header';
 import { HouseTab } from './HouseTab';
-import { Journal } from './Journal';
+import { JournalStrip } from './Journal';
 import { MapTab } from './MapTab';
 import { NotesTab } from './NotesTab';
 import { Objectives } from './Objectives';
@@ -16,6 +16,9 @@ import { BarterPanel, EncounterPanel, PackingPanel, SitePanel, TravelPanel } fro
 import { StoreTab } from './StoreTab';
 
 type TabId = 'house' | 'store' | 'craft' | 'map' | 'notes';
+
+/** Phases whose panel tells what just happened itself: no journal strip above them. */
+const OWN_LINES = new Set(['dawn', 'event', 'encounter']);
 
 export interface GameProps {
   view: View;
@@ -139,12 +142,12 @@ export function Game({ view, fresh, seq, onAct: send, onMenu, unread = [], onRea
           <button type="button" class="game__menu" onClick={onMenu} aria-label="Leave to the title">
             <span class="wordmark wordmark--tiny">ALL ALONE</span>
           </button>
-          <span class="game__where label">{view.location}</span>
+          <span class="game__where">{view.location}</span>
         </div>
         <Header view={view} />
         <main class="game__main" aria-label="The game">
-          {/* The dawn page and an encounter carry their own lines; the journal steps aside. */}
-          {view.phase !== 'dawn' && view.phase !== 'encounter' && <Journal entries={view.journal} fresh={fresh} seq={seq} />}
+          {/* The dawn page, an event and an encounter carry their own lines; the journal steps aside. */}
+          {!OWN_LINES.has(view.phase) && <JournalStrip entries={view.journal} fresh={fresh} seq={seq} />}
           {view.phase !== 'dawn' && view.phase !== 'encounter' && <Objectives items={view.objectives} />}
           <div
             class={home ? 'game__panel' : 'game__panel game__panel--phase'}

@@ -7,8 +7,9 @@ import { Sheet } from '../components/Sheet';
 import { Stepper } from '../components/Stepper';
 import { TabBar } from '../components/TabBar';
 import { Toasts } from '../components/Toasts';
-import { Journal } from './game/Journal';
+import { Journal, JournalStrip } from './game/Journal';
 import { Icon } from '../components/Icon';
+import { Fold, ListRow, Pips } from '../components/ListRow';
 import { LockHouseArt } from '../components/LockHouseArt';
 import { Meter } from '../components/Meter';
 import { Panel } from '../components/Panel';
@@ -60,6 +61,7 @@ export function Kit() {
   const [qty, setQty] = useState(2);
   const [tab, setTab] = useState<'house' | 'store' | 'craft' | 'map' | 'notes'>('house');
   const [sheet, setSheet] = useState(false);
+  const [fold, setFold] = useState(true);
   return (
     <main class="frame kit">
       <header class="kit__head">
@@ -135,6 +137,44 @@ export function Kit() {
       </section>
 
       <section class="kit__section">
+        <Rule>Actions as tiles</Rule>
+        <ActionList actions={SAMPLE_ACTIONS.slice(0, 4)} onAct={() => undefined} grid />
+      </section>
+
+      <section class="kit__section">
+        <Rule>List rows</Rule>
+        <ul class="lrows">
+          <li>
+            <ListRow icon="barricade" title="Barricade" aside={<span class="num">5/15</span>} />
+          </li>
+          <li>
+            <ListRow icon="fish" title="Night line" aside="Set, 1 on it" flag="Something to do" onClick={() => undefined} />
+          </li>
+          <li>
+            <ListRow icon="workbench" title="Make a night line" sub="Needs the workbench at level 1." dim onClick={() => undefined} />
+          </li>
+          <li>
+            <ListRow icon="barricade" title="Barricade" aside={<span class="num">1/15</span>} danger />
+          </li>
+        </ul>
+        <div class="folds">
+          <Fold title="Food" count={<span class="num">9</span>} open={fold} onToggle={() => setFold(!fold)}>
+            <ul class="lrows">
+              <li>
+                <ListRow icon="food" title="Ship’s biscuit" aside={<span class="num">0.4 kg</span>} onClick={() => undefined} />
+              </li>
+            </ul>
+          </Fold>
+          <Fold title="Materials" count={<span class="num">6</span>} open={false} onToggle={() => undefined}>
+            {null}
+          </Fold>
+        </div>
+        <p class="figure__name">
+          Level <Pips value={2} max={3} label="Level 2 of 3" />
+        </p>
+      </section>
+
+      <section class="kit__section">
         <Rule>Choices, side by side</Rule>
         <Choices label="How to go in">
           <ChoiceCard
@@ -195,8 +235,9 @@ export function Kit() {
       <section class="kit__section">
         <Rule>Journal</Rule>
         <div class="kit__journal">
-          <Journal entries={SAMPLE_JOURNAL} fresh={2} seq={1} />
+          <JournalStrip entries={SAMPLE_JOURNAL} fresh={2} seq={1} />
         </div>
+        <Journal entries={SAMPLE_JOURNAL} fresh={0} seq={1} />
       </section>
 
       <section class="kit__section">

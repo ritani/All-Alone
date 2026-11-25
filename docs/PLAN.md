@@ -125,14 +125,17 @@ voice: no confetti, no cartoon badges.
   stream, so they are testable and identical on every platform.
 
 ### Look and feel
-- Palette: field `#0b0c0d`, panel `#111315`, line/text `#d8d4c8`, dim `#7c7a72`,
+- Palette: field `#0b0c0d`, panel `#111315`, line/text `#d8d4c8`, dim `#8a877e` (≥4.5:1, night `#7d7a72`),
   faint `#3a3a37`, danger `#a3271f`. Danger red appears only for real danger.
 - Line art: inline SVG, stroke only, 1–1.25 px, square caps, mitre joins, no fills,
   no gradients, no rounded corners, no drop shadows, no emoji.
 - Type: system fonts only (no remote fonts). A serif stack for journal prose, a
-  monospace stack for numbers, labels in small tracked capitals.
+  monospace stack for numbers, small tracked capitals for section headers only.
+  Nothing a player must read below 14 px (`--fs-meta`); journal prose 18 px.
 - Layout: portrait-first single column (max ~480 px wide, centred on desktop),
   safe-area aware, touch targets ≥ 44 px, works with keyboard, respects reduced motion.
+  One scroll region per screen: the document never scrolls; in the game only the panel
+  (or an open sheet) does. Overview first, detail in a sheet.
 - Motion: slow opacity fades only. Night dims the whole interface.
 - Voice: plain, short, unsentimental. No jokes. No exclamation marks.
 

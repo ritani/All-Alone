@@ -11,17 +11,19 @@ export interface ActionButtonProps {
   plain?: boolean;
 }
 
-/** The cost line under an action: minutes, noise, odds. */
+/** The cost line under an action, as icons and numbers: time, noise, odds. */
 export function Chips({ minutes, noise, odds }: { minutes: number; noise: number; odds: number | null }) {
-  const parts: { key: string; text: string; loud?: boolean }[] = [];
-  if (minutes > 0) parts.push({ key: 'm', text: duration(minutes) });
-  if (noise > 0) parts.push({ key: 'n', text: `noise ${noise}`, loud: noise >= 6 });
-  if (odds !== null) parts.push({ key: 'o', text: `${odds}%` });
+  const parts: { key: string; icon: string | null; text: string; label: string; loud?: boolean }[] = [];
+  if (minutes > 0) parts.push({ key: 'm', icon: 'clock', text: duration(minutes), label: 'takes' });
+  if (noise > 0) parts.push({ key: 'n', icon: 'noise', text: String(noise), label: 'noise', loud: noise >= 6 });
+  if (odds !== null) parts.push({ key: 'o', icon: null, text: `${odds}%`, label: 'odds' });
   if (parts.length === 0) return null;
   return (
     <span class="chips">
       {parts.map((p) => (
         <span key={p.key} class={p.loud ? 'chip chip--loud' : 'chip'}>
+          {p.icon && <Icon name={p.icon} size={16} class="chip__icon" />}
+          <span class="visually-hidden">{p.label} </span>
           {p.text}
         </span>
       ))}
@@ -70,10 +72,20 @@ export function ActionButton({ a, onAct, plain = false }: ActionButtonProps) {
   );
 }
 
-/** A list of actions. */
-export function ActionList({ actions, onAct, plain }: { actions: ActionView[]; onAct: (a: Action) => void; plain?: boolean }) {
+/** A list of actions; `grid` sets them two to a row as compact tiles. */
+export function ActionList({
+  actions,
+  onAct,
+  plain,
+  grid = false,
+}: {
+  actions: ActionView[];
+  onAct: (a: Action) => void;
+  plain?: boolean;
+  grid?: boolean;
+}) {
   return (
-    <ul class="acts">
+    <ul class={grid ? 'acts acts--grid' : 'acts'}>
       {actions.map((a, i) => (
         <li key={`${a.label}-${i}`}>
           <ActionButton a={a} onAct={onAct} plain={plain ?? false} />

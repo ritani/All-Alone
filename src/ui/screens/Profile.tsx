@@ -8,6 +8,7 @@ import { CodexSheet } from './game/NotesTab';
 import { Button } from '../components/Button';
 import { Hairline } from '../components/Hairline';
 import { Icon } from '../components/Icon';
+import { Fold, ListRow } from '../components/ListRow';
 import { Page } from '../components/Page';
 import { Rule } from '../components/Rule';
 import { LedgerTable } from './LedgerTable';
@@ -56,34 +57,34 @@ const KIND_NAMES: [string, string][] = [
 /** Every codex entry found in any run; each opens in a sheet. */
 function EverFound({ entries }: { entries: CodexEntryView[] }) {
   const [open, setOpen] = useState<CodexEntryView | null>(null);
+  const [kind, setKind] = useState<string | null>(null);
   if (entries.length === 0) return <p class="prose prose--dim">Nothing found yet. Notes, photographs and the wireless keep what they know.</p>;
   return (
-    <>
-      {KIND_NAMES.map(([kind, name]) => {
-        const list = entries.filter((e) => e.kind === kind);
+    <div class="folds">
+      {KIND_NAMES.map(([k, name]) => {
+        const list = entries.filter((e) => e.kind === k);
         if (list.length === 0) return null;
         return (
-          <div key={kind} class="codex-sec">
-            <div class="codex-sec__head">
-              <Icon name={list[0]?.icon ?? 'journal'} size={20} />
-              <h3 class="codex-sec__name">{name}</h3>
-              <span class="num codex-sec__count">{list.length}</span>
-            </div>
-            <ul class="codex-sec__list">
+          <Fold
+            key={k}
+            icon={list[0]?.icon ?? 'journal'}
+            title={name}
+            count={<span class="num">{list.length}</span>}
+            open={kind === k}
+            onToggle={() => setKind(kind === k ? null : k)}
+          >
+            <ul class="lrows">
               {list.map((e) => (
                 <li key={e.id}>
-                  <button type="button" class="codex-entry" onClick={() => setOpen(e)}>
-                    <span class="codex-entry__title">{e.title}</span>
-                    <Icon name="forward" size={16} />
-                  </button>
+                  <ListRow title={e.title} onClick={() => setOpen(e)} />
                 </li>
               ))}
             </ul>
-          </div>
+          </Fold>
         );
       })}
       {open && <CodexSheet entry={open} onClose={() => setOpen(null)} />}
-    </>
+    </div>
   );
 }
 
@@ -126,7 +127,7 @@ export function Record({ profile, onBack }: { profile: ProfileView; onBack: () =
                     <span class="best__cause">
                       {endName(l)}. {l.cause}.
                     </span>
-                    <span class="best__meta label">
+                    <span class="best__meta">
                       {l.days} days · {bgName(l.background)}
                       {l.daily ? ` · daily ${l.daily}` : ''}
                     </span>
@@ -223,7 +224,7 @@ export function Unlocks({
                 <p class="unlock__text">{b.unlocked ? b.desc : b.unlock_mark ? `Or earn the mark ${b.unlock_mark}.` : b.desc}</p>
               </div>
               {b.unlocked ? (
-                <span class="label unlock__state">Open</span>
+                <span class="meta unlock__state">Open</span>
               ) : (
                 <Button
                   variant="quiet"
@@ -248,7 +249,7 @@ export function Unlocks({
                 <p class="unlock__text">{k.desc}</p>
               </div>
               {k.unlocked ? (
-                <span class="label unlock__state">Kept</span>
+                <span class="meta unlock__state">Kept</span>
               ) : (
                 <Button
                   variant="quiet"

@@ -16,7 +16,8 @@ export interface PageProps {
 export function useFocusHeading<T extends HTMLElement>(dep: unknown = null) {
   const ref = useRef<T>(null);
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // #app is the page's scroller (the document itself never scrolls).
+    document.getElementById('app')?.scrollTo(0, 0);
     ref.current?.focus({ preventScroll: true });
   }, [dep]);
   return ref;

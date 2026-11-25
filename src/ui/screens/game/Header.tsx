@@ -35,7 +35,7 @@ export function Header({ view }: { view: View }) {
       <button type="button" class="hud__top" aria-label="Status in full" onClick={() => setOpen(true)}>
         <span class="hud__day num">Day {view.day}</span>
         <span class="hud__clock num">{view.clock}</span>
-        <span class={view.dark ? 'hud__light hud__light--dark label' : 'hud__light label'}>{daylight(view)}</span>
+        <span class={view.dark ? 'hud__light hud__light--dark' : 'hud__light'}>{daylight(view)}</span>
         <span class="hud__weather">
           <Icon name={view.weather.today.icon} size={16} />
           <span class="num">{view.season.temperature}&#176;</span>
@@ -44,7 +44,7 @@ export function Header({ view }: { view: View }) {
 
       <div class={loud ? 'hud__noise hud__noise--loud' : 'hud__noise'}>
         <Icon name="noise" size={16} class="hud__noise-icon" />
-        <span class="label hud__noise-label">{view.noise.label}</span>
+        <span class="hud__noise-label">{view.noise.label}</span>
         <Hairline value={view.noise.value} max={100} label={`Noise ${view.noise.value}`} danger={loud} />
         <span class="num hud__noise-figure" title="Chance something comes tonight">
           {view.noise.value}
@@ -63,7 +63,7 @@ export function Header({ view }: { view: View }) {
           {view.conditions.map((c) => (
             <li key={c.id} class="condition">
               <Icon name={c.icon} size={16} />
-              <span class="condition__name label">{c.name}</span>
+              <span class="condition__name">{c.name}</span>
               <span class="condition__detail">{c.detail}</span>
             </li>
           ))}

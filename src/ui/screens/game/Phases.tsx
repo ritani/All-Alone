@@ -9,9 +9,11 @@ import { ActionList } from '../../components/ActionButton';
 import { Button } from '../../components/Button';
 import { Hairline } from '../../components/Hairline';
 import { Icon } from '../../components/Icon';
+import { ListRow } from '../../components/ListRow';
 import { useFocusHeading } from '../../components/Page';
 import { Rule } from '../../components/Rule';
 import { duration, groupActions, groupName } from '../../format';
+import { Provisions } from './HouseTab';
 import { ItemList } from './StoreTab';
 
 interface PhaseProps {
@@ -50,7 +52,7 @@ function Groups({ actions, onAct, order }: { actions: ActionView[]; onAct: (a: A
 export function EventPanel({ view, onAct }: PhaseProps) {
   const ev = view.event;
   const choices = view.actions.filter((a) => a.group === 'choice');
-  const rest = view.actions.filter((a) => a.group !== 'choice' && (a.enabled || a.group !== 'survive'));
+  const rest = view.actions.filter((a) => a.group !== 'choice' && a.group !== 'survive');
   return (
     <div class="phase phase--event">
       <PanelHead kicker="Something happens" title={ev?.title ?? 'A choice'} />
@@ -63,6 +65,7 @@ export function EventPanel({ view, onAct }: PhaseProps) {
       )}
       <ActionList actions={choices} onAct={onAct} plain />
       {rest.length > 0 && <Groups actions={rest} onAct={onAct} />}
+      <Provisions view={view} onAct={onAct} />
     </div>
   );
 }
@@ -71,34 +74,31 @@ export function EventPanel({ view, onAct }: PhaseProps) {
 
 export function NightPanel({ view, onAct }: PhaseProps) {
   const night = view.actions.filter((a) => a.group === 'night');
-  const rest = view.actions.filter((a) => a.group !== 'night' && a.enabled);
+  const rest = view.actions.filter((a) => a.group !== 'night' && a.group !== 'survive' && a.enabled);
   const g = view.grounds;
   return (
     <div class="phase phase--night">
       <PanelHead kicker={`Night ${view.run.nights + 1}`} title="The door is barred" />
-      <p class="prose prose--dim">
-        {view.noise.value === 0 ? 'You made no noise today.' : `Today's noise: ${view.noise.value}.`} The chance that
-        something comes to the house: {view.noise.visit_chance}%.
-      </p>
-      <div class="night__figures">
-        <div class="figure-line">
-          <span class="label">
-            <Icon name="barricade" size={16} /> Barricade
-          </span>
-          <span class="num">
-            {g.barricade}/{g.barricade_max}
-          </span>
-        </div>
-        <Hairline value={g.barricade} max={g.barricade_max} label="Barricade" />
-        <div class="figure-line">
-          <span class="label">
-            <Icon name="stove" size={16} /> Fire
-          </span>
-          <span>{g.fire_until ? `Until ${g.fire_until}` : 'Out'}</span>
-        </div>
-      </div>
+      <ul class="lrows">
+        <li>
+          <ListRow
+            icon="barricade"
+            title="Barricade"
+            aside={
+              <span class="num">
+                {g.barricade}/{g.barricade_max}
+              </span>
+            }
+            danger={g.barricade_max > 0 && g.barricade / g.barricade_max < 0.25}
+          />
+        </li>
+        <li>
+          <ListRow icon="stove" title="Fire" aside={g.fire_until ? `Until ${g.fire_until}` : 'Out'} />
+        </li>
+      </ul>
       <ActionList actions={night} onAct={onAct} />
       {rest.length > 0 && <Groups actions={rest} onAct={onAct} />}
+      <Provisions view={view} onAct={onAct} />
     </div>
   );
 }
@@ -108,7 +108,7 @@ export function NightPanel({ view, onAct }: PhaseProps) {
 export function DawnPage({ view, onAct }: PhaseProps) {
   const d = view.dawn;
   const rise = view.actions.find((a) => a.action.type === 'rise');
-  const others = view.actions.filter((a) => a.action.type !== 'rise' && a.enabled);
+  const others = view.actions.filter((a) => a.action.type !== 'rise' && a.group !== 'survive' && a.enabled);
   const h = useFocusHeading<HTMLHeadingElement>(d?.night ?? 0);
   if (!d) return <FallbackPanel view={view} onAct={onAct} />;
   const [first, ...restOfHeadline] = d.headline.split('. ');
@@ -150,13 +150,14 @@ export function DawnPage({ view, onAct }: PhaseProps) {
         )}
       </dl>
       {rise && (
-        <div class="dawn__go">
+        <div class="phase__go dawn__go">
           <Button block onClick={() => onAct(rise.action)} disabled={!rise.enabled}>
             {rise.label}
           </Button>
         </div>
       )}
       {others.length > 0 && <Groups actions={others} onAct={onAct} />}
+      <Provisions view={view} onAct={onAct} />
     </div>
   );
 }
@@ -217,7 +218,7 @@ export function FallbackPanel({ view, onAct }: PhaseProps) {
       body.push(
         <section key="pack" class="section">
           <Rule>In the pack</Rule>
-          <ItemList items={view.inventory.pack} actions={[]} onAct={onAct} />
+          <ItemList items={view.inventory.pack} />
         </section>,
       );
     }
@@ -253,7 +254,7 @@ export function FallbackPanel({ view, onAct }: PhaseProps) {
           {s.rooms.map((r) => (
             <li key={r.index} class={r.here ? 'room room--here' : r.entered ? 'room' : 'room room--dim'}>
               <span class="room__name">{r.name}</span>
-              <span class="room__flags label">
+              <span class="room__flags">
                 {[
                   r.here ? 'here' : '',
                   r.dark ? 'dark' : '',
@@ -267,7 +268,7 @@ export function FallbackPanel({ view, onAct }: PhaseProps) {
             </li>
           ))}
         </ol>
-        <p class="label">Noise here {s.site_noise}{s.widow_here ? ' · the widow is here' : ''}</p>
+        <p class="meta">Noise here {s.site_noise}{s.widow_here ? ' · the widow is here' : ''}</p>
       </section>,
     );
     if (s.room) {
@@ -276,7 +277,7 @@ export function FallbackPanel({ view, onAct }: PhaseProps) {
         <section key="room" class="section">
           <Rule>{r.name}</Rule>
           <p class="prose">{r.desc}</p>
-          <p class="label">
+          <p class="meta">
             {[r.dark ? (r.lit ? 'lit' : 'dark') : '', r.flooded ? 'flooded' : '', `search: ${r.search}`]
               .filter(Boolean)
               .join(' · ')}
@@ -293,8 +294,8 @@ export function FallbackPanel({ view, onAct }: PhaseProps) {
           )}
           {r.pile.length > 0 && (
             <>
-              <p class="label">Here</p>
-              <ItemList items={r.pile} actions={[]} onAct={onAct} />
+              <p class="meta">Here</p>
+              <ItemList items={r.pile} />
             </>
           )}
         </section>,
@@ -314,7 +315,7 @@ export function FallbackPanel({ view, onAct }: PhaseProps) {
           <li key={i} class={f.band === 'close' ? 'foe foe--close' : 'foe'}>
             <Icon name={f.icon} size={20} />
             <span class="foe__name">{f.name}</span>
-            <span class="foe__band label">{f.band}</span>
+            <span class="foe__band">{f.band}</span>
             <Hairline value={f.health} max={100} label={`${f.name} health`} />
           </li>
         ))}

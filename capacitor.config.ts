@@ -27,6 +27,9 @@ const config: CapacitorConfig = {
   ios: {
     // The page handles safe areas itself (viewport-fit=cover + env()).
     contentInset: 'never',
+    // The page never scrolls as a whole (only its own panels do), so the
+    // web view's scroll view is off: no rubber-band of the frame behind them.
+    scrollEnabled: false,
     backgroundColor: '#0b0c0d',
     allowsLinkPreview: false,
     preferredContentMode: 'mobile',

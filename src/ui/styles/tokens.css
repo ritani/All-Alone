@@ -6,8 +6,8 @@
   --c-field: #0b0c0d;   /* page background */
   --c-panel: #111315;   /* raised surfaces */
   --c-line: #d8d4c8;    /* text and line art (bone) */
-  --c-dim: #7c7a72;     /* secondary text, inactive lines */
-  --c-faint: #3a3a37;   /* hairline rules, meter tracks, disabled */
+  --c-dim: #8a877e;     /* secondary text, inactive lines (5.4:1 on the field) */
+  --c-faint: #3a3a37;   /* hairline rules, meter tracks, disabled: decoration only */
   --c-danger: #a3271f;  /* real danger only */
 
   /* Type stacks: system fonts only */
@@ -16,11 +16,14 @@
   --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
-  /* Type scale */
-  --fs-label: 0.6875rem;   /* 11px: tracked capitals */
-  --fs-small: 0.8125rem;   /* 13px */
+  /* Type scale. Nothing a player must read is set below --fs-meta. */
+  --fs-label: 0.8125rem;   /* 13px: tracked capitals, section headers only */
+  --fs-meta: 0.875rem;     /* 14px: figures, costs, meta lines */
+  --fs-small: 0.9375rem;   /* 15px: secondary text */
   --fs-body: 1rem;         /* 16px */
-  --fs-prose: 1.0625rem;   /* 17px: journal */
+  --fs-prose: 1.125rem;    /* 18px: journal */
+  --fs-lead: 1.25rem;      /* 20px: the newest line, event text */
+  --fs-head: 1.5rem;       /* 24px: phase titles, the clock */
   --fs-title: 2.25rem;     /* 36px: wordmark */
   --lh-tight: 1.2;
   --lh-body: 1.55;
@@ -57,7 +60,7 @@
 /* After dark the whole interface dims: bone goes to ash, lines recede. */
 :root.is-dark {
   --c-line: #aaa69b;
-  --c-dim: #64625b;
+  --c-dim: #7d7a72;       /* still about 4.5:1: dim text has to stay readable at night */
   --c-faint: #2c2c2a;
   --c-panel: #0e1011;
 }

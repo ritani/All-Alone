@@ -1,19 +1,13 @@
 /* Expedition screens: packing, the road, a place, an encounter, the widow.
    Same language as the house: hairlines, bone on near-black, one red. */
 
-/* The journal gives the phase room while out. */
-.game--packing .journal,
-.game--barter .journal {
-  height: clamp(5rem, 16dvh, 9rem);
-}
-
-.game--site .journal,
-.game--travelling .journal {
-  height: clamp(5.5rem, 20dvh, 11rem);
-}
-
 .phase__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 var(--sp-1);
   color: var(--c-dim);
+  font-size: var(--fs-small);
   margin-top: var(--sp-1);
 }
 
@@ -48,37 +42,35 @@
   border-bottom: 0;
 }
 
-/* ------------------------------------------------------------------ load */
-.load {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-}
-
 /* ------------------------------------------------------------------ needs */
+/* What the trip calls for: small cells two to a row, a tick or a cross. */
 .needs {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   border-top: var(--lw-hair) solid var(--c-faint);
-}
-
-.needs__head {
-  color: var(--c-dim);
+  border-left: var(--lw-hair) solid var(--c-faint);
 }
 
 .need {
   display: grid;
   grid-template-columns: 16px 1fr 16px;
   align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-2) 0;
+  gap: var(--sp-2);
+  min-height: 2.5rem;
+  padding: var(--sp-1) var(--sp-3);
+  border-right: var(--lw-hair) solid var(--c-faint);
   border-bottom: var(--lw-hair) solid var(--c-faint);
   font-size: var(--fs-small);
+  line-height: 1.3;
   color: var(--c-line);
 }
 
+.need--wide {
+  grid-column: 1 / -1;
+}
+
 .need .icon:last-child {
-  color: var(--c-dim);
+  color: var(--c-danger);
 }
 
 .need--met {
@@ -89,6 +81,70 @@
   color: var(--c-line);
 }
 
+/* ------------------------------------------------------------------ packing rows */
+.prows {
+  display: flex;
+  flex-direction: column;
+}
+
+.prow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  border-bottom: var(--lw-hair) solid var(--c-faint);
+}
+
+.prow:last-child {
+  border-bottom: 0;
+}
+
+.prow__item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--touch);
+  padding: var(--sp-2) 0;
+  text-align: left;
+  color: var(--c-line);
+}
+
+.prow__icon {
+  color: var(--c-dim);
+}
+
+.prow--in .prow__icon {
+  color: var(--c-line);
+}
+
+.prow__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.prow__name {
+  font-size: var(--fs-body);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.prow__meta {
+  font-size: var(--fs-meta);
+  color: var(--c-dim);
+  line-height: 1.35;
+}
+
+.prow .stepper__value {
+  min-width: 2.5em;
+}
+
+.prow--in .stepper__value {
+  color: var(--c-line);
+}
+
 /* ------------------------------------------------------------------ item moves */
 .moves {
   display: flex;
@@ -96,71 +152,59 @@
   border-top: var(--lw-hair) solid var(--c-faint);
 }
 
-.moves__group + .moves__group {
-  margin-top: var(--sp-4);
-}
-
-.moves__kind {
-  color: var(--c-dim);
-  margin-bottom: var(--sp-2);
-}
-
 .move {
   display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
   padding: var(--sp-2) 0;
   border-bottom: var(--lw-hair) solid var(--c-faint);
-}
-
-.move__head {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  min-height: 1.75rem;
 }
 
 .move__icon {
   color: var(--c-dim);
 }
 
+.move__main {
+  flex: 1 1 7rem;
+  min-width: 7rem;
+  display: flex;
+  flex-direction: column;
+}
+
 .move__name {
-  flex: 1;
-  min-width: 0;
   overflow-wrap: anywhere;
+  line-height: 1.3;
 }
 
-.move__qty,
-.move__aside {
+.move__qty {
   color: var(--c-dim);
-  font-size: var(--fs-small);
+  font-size: var(--fs-meta);
 }
 
-.move__aside {
-  flex: none;
-}
-
-.move__detail {
-  padding-left: calc(20px + var(--sp-3));
+.move__detail,
+.move__reason {
   color: var(--c-dim);
-  font-size: var(--fs-small);
+  font-size: var(--fs-meta);
   line-height: 1.35;
 }
 
 .move__do {
+  flex: none;
+  margin-left: auto;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
   gap: var(--sp-2);
 }
 
 .move__btn {
   min-height: var(--touch);
-  min-width: 5.5rem;
-  padding: 0 var(--sp-4);
+  min-width: 4.5rem;
+  padding: 0 var(--sp-3);
   border: var(--lw-hair) solid var(--c-line);
   color: var(--c-line);
+  font-size: var(--fs-small);
+  font-weight: 500;
   transition: background-color var(--fade) var(--ease), color var(--fade) var(--ease);
   touch-action: manipulation;
 }
@@ -176,15 +220,8 @@
 
 .move__btn:disabled {
   border-color: var(--c-faint);
-  color: var(--c-faint);
-  cursor: default;
-}
-
-.move__reason {
-  flex-basis: 100%;
-  text-align: right;
   color: var(--c-dim);
-  font-size: var(--fs-small);
+  cursor: default;
 }
 
 .move--off .move__name {
@@ -204,7 +241,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: var(--sp-1);
-  min-height: 5.5rem;
+  min-height: 4.5rem;
   min-width: 0;
   padding: var(--sp-3);
   text-align: left;
@@ -284,7 +321,7 @@
 
 .road .map {
   display: block;
-  max-height: 11rem;
+  max-height: 10rem;
   margin: 0 auto;
 }
 
@@ -295,10 +332,6 @@
   fill: none;
 }
 
-.road__note {
-  font-size: var(--fs-small);
-}
-
 /* ------------------------------------------------------------------ a place */
 .site__art {
   margin: calc(-1 * var(--sp-2)) calc(-1 * var(--sp-2)) 0;
@@ -306,7 +339,7 @@
 
 .art--place {
   display: block;
-  max-height: 9rem;
+  max-height: 7.5rem;
 }
 
 /* Inside, the place recedes to a narrow band. */
@@ -329,8 +362,28 @@
   margin-top: var(--sp-2);
 }
 
+.site__where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
 .site__state {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   color: var(--c-dim);
+  font-size: var(--fs-meta);
+}
+
+.site__state > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.site__state > span + span {
+  white-space: pre;
 }
 
 .dormant {
@@ -351,44 +404,30 @@
   color: var(--c-dim);
 }
 
-/* The rooms as a route down the page, outside at the top. */
+/* The rooms as a route across the page: outside on the left. */
 .route {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: var(--sp-2);
 }
 
 .stop {
   position: relative;
-  display: grid;
-  grid-template-columns: 1.25rem 1fr auto;
+  display: flex;
   align-items: center;
-  gap: var(--sp-3);
-  min-height: 2.5rem;
-  font-size: var(--fs-small);
-  color: var(--c-dim);
+  height: 1.25rem;
 }
 
-/* The line joining one stop to the next. */
-.stop::before {
+/* The line from one stop to the next. */
+.stop + .stop::before {
   content: '';
-  position: absolute;
-  left: calc(0.625rem - 0.5px);
-  top: 0;
-  bottom: 0;
-  border-left: var(--lw-hair) solid var(--c-faint);
-}
-
-.stop:first-child::before {
-  top: 50%;
-}
-
-.stop:last-child::before {
-  bottom: 50%;
+  width: 1rem;
+  border-top: var(--lw-hair) solid var(--c-faint);
 }
 
 .stop__mark {
-  position: relative;
-  justify-self: center;
+  display: block;
   width: 0.625rem;
   height: 0.625rem;
   border: var(--lw-hair) solid var(--c-dim);
@@ -400,17 +439,12 @@
   border-color: var(--c-faint);
 }
 
-.stop--unseen .stop__name {
-  color: var(--c-faint);
-  font-style: italic;
-}
-
-.stop--entered {
-  color: var(--c-line);
-}
-
 .stop--entered .stop__mark {
   border-color: var(--c-line);
+}
+
+.stop--locked .stop__mark {
+  border-width: 2px;
 }
 
 /* Where you are: a square inside a square. */
@@ -422,26 +456,7 @@
   outline-offset: -5px;
 }
 
-.stop--here .stop__name {
-  color: var(--c-line);
-  font-weight: 600;
-}
-
-.stop__flags {
-  display: flex;
-  gap: var(--sp-2);
-  color: var(--c-dim);
-}
-
-.stop__flag {
-  display: inline-flex;
-}
-
 /* ------------------------------------------------------------------ an encounter */
-.game--encounter .journal {
-  height: clamp(4rem, 12dvh, 7rem);
-}
-
 .enc__log {
   display: flex;
   flex-direction: column;
@@ -452,13 +467,13 @@
 
 .enc__line {
   color: var(--c-dim);
-  font-size: var(--fs-small);
+  font-size: var(--fs-body);
   animation: fade-in var(--fade-slow) var(--ease) both;
 }
 
 .enc__line--last {
   color: var(--c-line);
-  font-size: 1.1875rem;
+  font-size: var(--fs-lead);
   line-height: 1.4;
 }
 
@@ -485,11 +500,12 @@
 .stilled__name {
   flex: 1;
   font-family: var(--font-prose);
-  font-size: 1.125rem;
+  font-size: var(--fs-prose);
 }
 
 .stilled__band {
   color: var(--c-dim);
+  font-size: var(--fs-small);
 }
 
 .stilled--close .stilled__band,
@@ -526,24 +542,9 @@
   to { opacity: 0.45; }
 }
 
-.stilled__scale {
-  display: flex;
-  justify-content: space-between;
-  color: var(--c-faint);
-  font-size: 0.625rem;
-}
-
 .stilled__health {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: var(--sp-3);
-  margin-top: var(--sp-1);
-}
-
-.stilled__health .label {
-  color: var(--c-dim);
-  font-size: 0.625rem;
+  flex: none;
+  width: 4rem;
 }
 
 .enc__you {
@@ -552,17 +553,23 @@
   gap: var(--sp-2);
 }
 
+.enc__meters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4);
+}
+
 .enc__kit {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-2) var(--sp-4);
+  gap: var(--sp-1) var(--sp-4);
+  font-size: var(--fs-small);
 }
 
-.enc__kit .label {
+.enc__kit > span {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  color: var(--c-line);
 }
 
 .fight {
@@ -590,20 +597,17 @@
   border: var(--lw-hair) solid var(--c-faint);
 }
 
-.slate .label {
+.slate__name {
   color: var(--c-dim);
+  font-size: var(--fs-small);
 }
 
 .slate__figure {
-  font-size: 1.75rem;
+  font-size: var(--fs-head);
   line-height: 1;
 }
 
 @media (max-width: 22rem) {
-  .fight {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .choice-card {
     min-height: 0;
   }

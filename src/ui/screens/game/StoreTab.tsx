@@ -1,9 +1,10 @@
 import { useState } from 'preact/hooks';
 import type { Action, ActionView, ItemView, View } from '../../../core';
-import { ActionButton } from '../../components/ActionButton';
+import { ActionList } from '../../components/ActionButton';
 import { Hairline } from '../../components/Hairline';
 import { Icon } from '../../components/Icon';
-import { Rule } from '../../components/Rule';
+import { Fold, ListRow } from '../../components/ListRow';
+import { Sheet } from '../../components/Sheet';
 
 export const KIND_ORDER = [
   'food',
@@ -49,90 +50,118 @@ export function itemActions(actions: ActionView[], id: string): ActionView[] {
   return actions.filter((a) => 'item' in a.action && a.action.item === id);
 }
 
-function ItemRow({ item, actions, onAct }: { item: ItemView; actions: ActionView[]; onAct: (a: Action) => void }) {
-  const [open, setOpen] = useState(false);
+/** Items grouped by kind, in the store's order. */
+export function byKind(items: ItemView[]): [string, ItemView[]][] {
+  const kinds = [...new Set(items.map((i) => i.kind))].sort(
+    (a, b) => (KIND_ORDER.indexOf(a) + 1 || 99) - (KIND_ORDER.indexOf(b) + 1 || 99),
+  );
+  return kinds.map((k) => [k, items.filter((i) => i.kind === k)]);
+}
+
+/** One item in full: what it does, what it is, and what can be done with it. */
+export function ItemSheet({
+  item,
+  actions,
+  onAct,
+  onClose,
+}: {
+  item: ItemView;
+  actions: ActionView[];
+  onAct: (a: Action) => void;
+  onClose: () => void;
+}) {
   const mine = itemActions(actions, item.id);
   return (
-    <li class="item">
-      <button type="button" class="item__row" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <Icon name={item.icon} size={20} class="item__icon" />
-        <span class="item__name">
-          {item.name}
-          {item.qty > 1 && <span class="num item__qty"> x{item.qty}</span>}
-        </span>
-        <span class="item__weight num">{item.weight_label}</span>
-      </button>
-      <p class="item__detail">
-        {item.detail}
-        {item.uses_left !== null ? ` · ${item.uses_left} uses left` : ''}
+    <Sheet title={item.name} onClose={onClose}>
+      <p class="item__figures">
+        <Icon name={item.icon} size={20} />
+        <span class="num">x{item.qty}</span>
+        <span class="num">{item.weight_label}</span>
+        {item.uses_left !== null && <span class="num">{item.uses_left} uses left</span>}
       </p>
-      {open && <p class="item__desc prose prose--dim">{item.desc}</p>}
-      {mine.length > 0 && (
-        <ul class="acts acts--inline">
-          {mine.map((a, i) => (
-            <li key={i}>
-              <ActionButton a={a} onAct={onAct} plain />
-            </li>
-          ))}
-        </ul>
-      )}
-    </li>
+      {item.detail && <p class="item__detail num">{item.detail}</p>}
+      <p class="prose prose--dim">{item.desc}</p>
+      {mine.length > 0 && <ActionList actions={mine} onAct={onAct} />}
+    </Sheet>
   );
 }
 
-export function ItemList({ items, actions, onAct }: { items: ItemView[]; actions: ActionView[]; onAct: (a: Action) => void }) {
+/** Compact item rows: name, how many, weight. A row opens the item's sheet. */
+export function ItemList({ items, onOpen }: { items: ItemView[]; onOpen?: ((item: ItemView) => void) | undefined }) {
   return (
-    <ul class="items">
+    <ul class="lrows">
       {items.map((it) => (
-        <ItemRow key={it.id} item={it} actions={actions} onAct={onAct} />
+        <li key={it.id}>
+          <ListRow
+            icon={it.icon}
+            title={
+              <>
+                {it.name}
+                {it.qty > 1 && <span class="num lrow__qty"> x{it.qty}</span>}
+              </>
+            }
+            aside={<span class="num">{it.weight_label}</span>}
+            onClick={onOpen ? () => onOpen(it) : undefined}
+          />
+        </li>
       ))}
     </ul>
   );
 }
 
+/** Which groups the player has opened, kept across tab changes. */
+const opened = new Set<string>(['food', 'drink', 'medicine']);
+
 export function StoreTab({ view, onAct }: { view: View; onAct: (a: Action) => void }) {
   const inv = view.inventory;
-  const kinds = [...new Set(inv.store.map((i) => i.kind))].sort(
-    (a, b) => (KIND_ORDER.indexOf(a) + 1 || 99) - (KIND_ORDER.indexOf(b) + 1 || 99),
-  );
+  const [, redraw] = useState(0);
+  const [item, setItem] = useState<string | null>(null);
+  const toggle = (k: string) => {
+    if (opened.has(k)) opened.delete(k);
+    else opened.add(k);
+    redraw((n) => n + 1);
+  };
+  const groups: [string, string, ItemView[]][] = [
+    ...(inv.worn.length > 0 ? [['worn', 'Worn', inv.worn] as [string, string, ItemView[]]] : []),
+    ...(inv.pack.length > 0 ? [['pack', 'In the pack', inv.pack] as [string, string, ItemView[]]] : []),
+    ...byKind(inv.store).map(([k, list]) => [k, KIND_NAMES[k] ?? k, list] as [string, string, ItemView[]]),
+  ];
+  const all = [...inv.worn, ...inv.pack, ...inv.store];
+  const shown = item ? all.find((i) => i.id === item) : undefined;
   return (
     <>
-      <section class="section">
-        <div class="figure-line">
-          <span class="label">
-            <Icon name="water" size={16} /> Water held
+      <section class="section store__figures">
+        <div class="figure">
+          <span class="figure__name">
+            <Icon name="water" size={16} /> Water
           </span>
           <span class="num">
             {inv.water}/{inv.water_capacity}
           </span>
+          <Hairline value={inv.water} max={inv.water_capacity} label="Water held" />
         </div>
-        <Hairline value={inv.water} max={inv.water_capacity} label="Water held" />
-        <div class="figure-line">
-          <span class="label">
-            <Icon name="pack" size={16} /> You can carry
+        <div class="figure">
+          <span class="figure__name">
+            <Icon name="pack" size={16} /> Carry
           </span>
           <span class="num">{inv.carry_label}</span>
         </div>
       </section>
-      {inv.worn.length > 0 && (
-        <section class="section">
-          <Rule>Worn</Rule>
-          <ItemList items={inv.worn} actions={view.actions} onAct={onAct} />
-        </section>
-      )}
-      {inv.pack.length > 0 && (
-        <section class="section">
-          <Rule>In the pack</Rule>
-          <ItemList items={inv.pack} actions={view.actions} onAct={onAct} />
-        </section>
-      )}
       {inv.store.length === 0 && <p class="prose prose--dim">The shelves are bare.</p>}
-      {kinds.map((k) => (
-        <section key={k} class="section">
-          <Rule>{KIND_NAMES[k] ?? k}</Rule>
-          <ItemList items={inv.store.filter((i) => i.kind === k)} actions={view.actions} onAct={onAct} />
-        </section>
-      ))}
+      <section class="section folds">
+        {groups.map(([k, name, list]) => (
+          <Fold
+            key={k}
+            title={name}
+            count={<span class="num">{list.reduce((n, i) => n + i.qty, 0)}</span>}
+            open={opened.has(k)}
+            onToggle={() => toggle(k)}
+          >
+            <ItemList items={list} onOpen={(it) => setItem(it.id)} />
+          </Fold>
+        ))}
+      </section>
+      {shown && <ItemSheet item={shown} actions={view.actions} onAct={onAct} onClose={() => setItem(null)} />}
     </>
   );
 }

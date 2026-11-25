@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'preact/hooks';
 import { initCore } from '../core';
 import { createPlatform } from '../platform';
 import { popBack } from './back';
+import { installDragGuard } from './drag';
 import { Toasts } from './components/Toasts';
 import { Ended } from './screens/Ended';
 import { Game } from './screens/game/Game';
@@ -30,6 +31,8 @@ function Screens() {
   useEffect(() => {
     const dark = s.screen === 'game' && (s.view?.dark === true || s.view?.phase === 'night');
     document.documentElement.classList.toggle('is-dark', dark);
+    // The game frame holds still; only its panel scrolls.
+    document.documentElement.classList.toggle('is-game', s.screen === 'game');
   }, [s.screen, s.view?.dark, s.view?.phase]);
 
   let screen;
@@ -122,6 +125,7 @@ export function App() {
     () => new Store({ storage: platform.storage, haptics: platform.haptics, init: () => initCore() }),
     [platform],
   );
+  useEffect(() => installDragGuard(), []);
   useEffect(() => {
     if (import.meta.env.DEV && wantsKit()) return undefined;
     void store.boot();

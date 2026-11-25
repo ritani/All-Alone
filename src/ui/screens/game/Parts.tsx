@@ -131,19 +131,29 @@ export function MoveRow({
   const max = a && a.enabled ? Math.max(1, a.max_qty) : 1;
   const shown = Math.min(qty, max);
   const can = a?.enabled === true;
+  const sub = [aside, note ?? item.detail].filter((x) => x !== undefined && x !== null && x !== '');
   return (
     <li class={can ? 'move' : 'move move--off'}>
-      <div class="move__head">
-        <Icon name={item.icon} size={20} class="move__icon" />
+      <Icon name={item.icon} size={20} class="move__icon" />
+      <span class="move__main">
         <span class="move__name">
           {item.name}
           {item.qty > 1 && <span class="num move__qty"> x{item.qty}</span>}
         </span>
-        {aside !== undefined && <span class="move__aside num">{aside}</span>}
-      </div>
-      {(note ?? item.detail) && <p class="move__detail">{note ?? item.detail}</p>}
+        {sub.length > 0 && (
+          <span class="move__detail">
+            {sub.map((x, i) => (
+              <span key={i} class={i === 0 && aside !== undefined ? 'num' : undefined}>
+                {i > 0 ? ' · ' : ''}
+                {x}
+              </span>
+            ))}
+          </span>
+        )}
+        {a && !can && a.reason && !hideReason && <span class="move__reason">{a.reason}</span>}
+      </span>
       {a && (
-        <div class="move__do">
+        <span class="move__do">
           {can && max > 1 && (
             <Stepper value={shown} min={1} max={max} onChange={setQty} label={`How many: ${item.name}`} />
           )}
@@ -154,11 +164,9 @@ export function MoveRow({
             onClick={() => a && onAct(withQty(a.action, shown))}
             aria-label={`${verb} ${shown > 1 ? `${shown} x ` : ''}${item.name}`}
           >
-            <span class="label">{verb}</span>
-            {can && max > 1 && shown > 1 && <span class="num"> {shown}</span>}
+            {verb}
           </button>
-          {!can && a.reason && !hideReason && <span class="move__reason">{a.reason}</span>}
-        </div>
+        </span>
       )}
     </li>
   );

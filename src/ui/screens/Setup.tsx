@@ -81,7 +81,7 @@ export function Setup({ profile, hasRun, run = null, daily: dailyStatus = null, 
             <span class="choice__head">
               <Icon name={b.unlocked ? b.icon : 'lock'} size={24} class="choice__icon" />
               <span class="choice__name">{b.name}</span>
-              <span class="choice__aside label">
+              <span class="choice__aside">
                 {SKILL_NAMES[b.skill] ?? b.skill} {b.skill_level}
               </span>
             </span>
@@ -194,7 +194,7 @@ export function Setup({ profile, hasRun, run = null, daily: dailyStatus = null, 
           ) : (
             dailyTried && <p class="daily__done">Already begun today. Another attempt will not count.</p>
           )}
-          <p class="daily__streak label">
+          <p class="daily__streak">
             Streak {profile.daily_streak}. Best {profile.daily_best_streak}.
           </p>
           <Button block variant="quiet" icon="sigil_river" onClick={() => go('daily')}>
