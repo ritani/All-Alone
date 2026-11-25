@@ -1,0 +1,28 @@
+[package]
+name = "all-alone-core"
+version = "0.1.0"
+description = "ALL ALONE game core: rules, content, saves, marks and profile."
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+license = "UNLICENSED"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+# The wasm-bindgen bridge (src/wasm.rs). Enabled by `npm run build:core`.
+wasm = ["dep:wasm-bindgen"]
+# TypeScript type export for src/core/types.ts (tests only, never shipped).
+ts = ["dep:ts-rs"]
+
+[dependencies]
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+wasm-bindgen = { version = "=0.2.130", optional = true }
+ts-rs = { version = "=12.0.1", optional = true }
+
+[package.metadata.wasm-pack.profile.release]
+# wasm-pack would download binaryen; scripts/build-core.mjs runs a local wasm-opt instead.
+wasm-opt = false

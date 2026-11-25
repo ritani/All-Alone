@@ -8,16 +8,21 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "build:core": "node scripts/build-core.mjs",
+    "dev": "npm run build:core && vite",
+    "build": "npm run build:core && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "test": "vitest run",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run build"
+    "types": "cd crates/core && UPDATE_TYPES=1 cargo test --features ts --lib ts_types",
+    "check:rust": "cargo fmt --all --check && cargo clippy --all-targets --all-features -- -D warnings && cargo test && cargo test --features ts --lib ts_types",
+    "check": "npm run check:rust && npm run build:core && npm run typecheck && npm run lint && npm run test && vite build",
+    "audit:rust": "cargo audit"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@types/node": "22.20.7",
     "eslint": "10.15.0",
     "globals": "17.14.0",
     "typescript": "6.0.3",

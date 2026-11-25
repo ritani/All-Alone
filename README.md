@@ -7,24 +7,50 @@ repair the ferry before the river freezes.
 Text and line art, built for phones first. Web now; iOS and Android later via
 Capacitor from the same build.
 
-**Status:** milestone M1 (foundation). There is a title screen and a review
-sheet of visual primitives; the game itself is not playable yet.
+**Status:** milestone M2 (core simulation). The whole game runs headless in
+the Rust core (`crates/core`, compiled to WebAssembly); the screens that play
+it arrive in M3 and M4. The browser still shows the M1 title screen.
 
 The design, look, technology, security rules and milestones are in
 [docs/PLAN.md](docs/PLAN.md). Read it before changing anything.
 
-## Run
+## Toolchain
 
-Requires Node 22.12 or newer.
+- Node 22.12 or newer.
+- Rust stable (1.85+) with the `wasm32-unknown-unknown` target, `wasm-pack`,
+  and optionally `wasm-opt` (binaryen) for a smaller `.wasm`. `cargo-audit` for
+  `npm run audit:rust`.
+
+```sh
+rustup target add wasm32-unknown-unknown
+cargo install wasm-pack        # and: cargo install cargo-audit
+```
+
+`cargo`, `rustc` and `wasm-pack` must be on `PATH` (on this machine:
+`/opt/homebrew/opt/rustup/bin` and `~/.cargo/bin`). The first `wasm-pack`
+build downloads the matching `wasm-bindgen` CLI once.
+
+## Run
 
 ```sh
 npm ci            # install exactly what the lockfile pins
-npm run dev       # dev server
-npm run check     # typecheck + lint + tests + production build
+npm run dev       # build the core, then the dev server
+npm run check     # Rust fmt/clippy/tests + types check, wasm build, typecheck, lint, Vitest, production build
 npm run preview   # serve the production build from dist/
 ```
 
-Other scripts: `build`, `typecheck`, `lint`, `test`.
+Other scripts:
+
+- `build:core` builds the Rust core to `src/core/pkg/` (git-ignored) with
+  `wasm-pack --target web`, then `wasm-opt -Oz` if installed.
+- `types` regenerates `src/core/types.ts` from the Rust serde types (the
+  check fails if it is stale).
+- `check:rust` runs only the Rust side; `audit:rust` runs `cargo audit`.
+- `build`, `typecheck`, `lint`, `test`.
+
+`cargo test --test bots -- --nocapture` prints the balance report from the
+headless bot playthroughs; `cargo run --example trace -- <seed>` prints one
+bot run's journal.
 
 Open the dev or preview URL with `?kit` appended to see every icon and UI
 primitive on one page.
@@ -33,6 +59,8 @@ primitive on one page.
 
 `index.html` carries a strict CSP meta tag; `public/_headers` carries the same
 policy plus `frame-ancestors` and the other security headers for static hosts.
+`script-src` includes `'wasm-unsafe-eval'`, which WebAssembly compilation
+needs; nothing else is loosened.
 
 The dev server injects CSS as inline `<style>` tags for hot reload, so in dev
 only (`npm run dev`) a small Vite plugin adds `'unsafe-inline'` to `style-src`.
@@ -44,7 +72,8 @@ handler attributes or remote resources. Check CSP behaviour with
 ## Layout
 
 ```
-src/core/      pure game logic (no DOM, no UI, no platform imports; lint-enforced)
+crates/core/   the game core in Rust: content/, systems/, state, actions, saves, marks, wasm bridge
+src/core/      typed TS wrapper over the wasm core, generated types.ts, generated pkg/ (ignored)
 src/platform/  storage, haptics, lifecycle adapters
 src/ui/        components, screens, icons, styles
 ```

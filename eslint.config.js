@@ -34,13 +34,13 @@ const unsafeSyntax = [
 ];
 
 export default defineConfig(
-  { ignores: ['dist/', 'coverage/', 'node_modules/', 'ios/', 'android/'] },
+  { ignores: ['dist/', 'coverage/', 'node_modules/', 'ios/', 'android/', 'target/', 'src/core/pkg/', 'src/core/types.ts'] },
   js.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
   {
     languageOptions: {
       parserOptions: {
-        projectService: { allowDefaultProject: ['eslint.config.js'] },
+        projectService: { allowDefaultProject: ['eslint.config.js', 'scripts/*.mjs'] },
         tsconfigRootDir: import.meta.dirname,
       },
       globals: { ...globals.browser },
@@ -56,10 +56,10 @@ export default defineConfig(
     },
   },
   {
-    files: ['eslint.config.js', 'vite.config.ts'],
+    files: ['eslint.config.js', 'vite.config.ts', 'scripts/**/*.mjs', 'src/**/*.test.ts'],
     languageOptions: { globals: { ...globals.node } },
   },
-  { files: ['**/*.js'], extends: [tseslint.configs.disableTypeChecked] },
+  { files: ['**/*.js', '**/*.mjs'], extends: [tseslint.configs.disableTypeChecked] },
   {
     // The game core is pure: no UI, no platform, no DOM.
     files: ['src/core/**/*.{ts,tsx}'],
