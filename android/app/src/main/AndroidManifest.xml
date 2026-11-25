@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      No backup of game data (saves stay on the device, and are never copied to
+      the cloud or to another device), no cleartext traffic anywhere, no
+      debuggable release (Gradle sets debuggable only for debug builds).
+    -->
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        tools:targetApi="31">
+
+        <!-- Portrait on phones is set in MainActivity (tablets may rotate). -->
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+    </application>
+
+    <!--
+      Permissions: only VIBRATE, which the Haptics plugin declares (a normal
+      permission, never prompted). No INTERNET: the game makes no network
+      requests, and Capacitor serves the bundled files to the WebView from
+      inside the app (an intercepted https://localhost), which needs none.
+      The removal below keeps any library from adding it back.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+</manifest>

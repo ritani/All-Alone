@@ -1,0 +1,14 @@
+<!--
+  ALL ALONE app mark: the lock house on the river bank.
+  Source for every icon and splash image (npm run icons). Stroke only, square
+  caps, mitre joins, no fills. Drawn on a 100 x 100 grid; scripts/icons.mjs
+  places it on the near-black field at each size.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="#d8d4c8" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter">
+  <path d="M14 46L50 14L86 46"/>
+  <path d="M22 40V78H78V40"/>
+  <path d="M64 26.4V17H71V32.6"/>
+  <path d="M44 78V62H56V78"/>
+  <path d="M30 50H38V58H30Z"/>
+  <path d="M10 87H38M50 87H90M22 95H70"/>
+</svg>

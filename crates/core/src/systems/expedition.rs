@@ -61,6 +61,21 @@ pub fn walk_minutes(s: &GameState, hurry: bool) -> u32 {
     clock::cost(s, m)
 }
 
+/// Hurrying is risky (drawn in the danger accent) only when it brings you in
+/// after dark, or when the exertion would cost health or leave a vital under 20.
+pub fn hurry_risky(s: &GameState) -> bool {
+    let m = walk_minutes(s, true);
+    let t = (s.minute + m) % crate::state::DAY;
+    if !(crate::state::DAWN..crate::state::DUSK).contains(&t) {
+        return true;
+    }
+    let mut c = s.clone();
+    clock::pass(&mut c, &mut Journal::default(), m, Activity::Exertion);
+    c.ended()
+        || c.vitals.pts(VitalKind::Health) < s.vitals.pts(VitalKind::Health)
+        || VitalKind::ALL.iter().any(|k| c.vitals.pts(*k) < 20)
+}
+
 pub fn walk(s: &mut GameState, j: &mut Journal, hurry: bool) {
     let m = walk_minutes(s, hurry);
     let metres = s.dest.as_deref().and_then(places::get).map_or(0, |p| p.minutes * 80);
@@ -797,5 +812,79 @@ pub fn ambush(s: &mut GameState, j: &mut Journal) {
             &format!("The blow lands, but the {} turns to you.", creatures::def(kind).name),
         );
         wake_room(s, j, i, Band::Close);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::state::{GameConfig, MILLI, new_game};
+
+    fn on_the_road(place: &str) -> GameState {
+        let mut s = new_game(&GameConfig {
+            seed: 9,
+            difficulty: crate::content::Difficulty::Still,
+            background: "clerk".into(),
+            keepsake: None,
+            daily: None,
+            held_marks: vec![],
+        })
+        .unwrap();
+        let mut j = Journal::default();
+        s.dest = Some(place.into());
+        s.phase = Phase::Packing;
+        depart(&mut s, &mut j);
+        s
+    }
+
+    #[test]
+    fn hurrying_is_only_risky_when_it_is() {
+        let mut s = on_the_road("weir");
+        assert!(!hurry_risky(&s), "a short daylight hurry on full vitals is not danger");
+
+        // Arriving after dusk is.
+        let fresh = s.clone();
+        s.minute = (s.minute / crate::state::DAY) * crate::state::DAY + crate::state::DUSK - 1;
+        assert!(hurry_risky(&s));
+
+        // So is exertion that would leave a vital under 20.
+        let mut s = fresh;
+        let rest = s.vitals.get(VitalKind::Rest);
+        s.vitals.add(VitalKind::Rest, 20 * MILLI + MILLI / 4 - rest);
+        assert_eq!(s.vitals.pts(VitalKind::Rest), 20);
+        assert!(hurry_risky(&s));
+    }
+}
+
+#[cfg(test)]
+mod frozen_tests {
+    use crate::state::{GameConfig, new_game};
+
+    /// Once the river has frozen, no ferry part asks to be found.
+    #[test]
+    fn frozen_river_stops_part_hints() {
+        let mut s = new_game(&GameConfig {
+            seed: 3,
+            difficulty: crate::content::Difficulty::Still,
+            background: "clerk".into(),
+            keepsake: None,
+            daily: None,
+            held_marks: vec![],
+        })
+        .unwrap();
+        let before = crate::view::view(&s);
+        assert!(
+            before
+                .ferry
+                .parts
+                .iter()
+                .any(|p| p.need.as_deref().is_some_and(|n| n.starts_with("Find")))
+        );
+        s.frozen = true;
+        let v = crate::view::view(&s);
+        for p in &v.ferry.parts {
+            assert_eq!(p.need.as_deref(), Some(crate::view::FROZEN_PART), "{}", p.id);
+        }
+        assert!(!v.objectives.iter().any(|o| o.id == "find_part"));
     }
 }

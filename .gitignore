@@ -10,17 +10,15 @@ coverage/
 *.tsbuildinfo
 .vite/
 
-# Native (Capacitor) build output
-ios/App/build/
-ios/App/Pods/
-ios/DerivedData/
-android/build/
-android/app/build/
-android/.gradle/
-android/local.properties
-android/capacitor-cordova-android-plugins/
+# Native (Capacitor): build outputs and copied web assets are ignored by
+# ios/.gitignore and android/.gitignore (Capacitor's own). Signing material
+# never belongs in the repository.
 *.keystore
 *.jks
+*.p12
+*.mobileprovision
+*.cer
+android/keystore.properties
 
 # Environment and logs
 .env

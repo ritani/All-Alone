@@ -56,10 +56,32 @@ export default defineConfig(
     },
   },
   {
-    files: ['eslint.config.js', 'vite.config.ts', 'scripts/**/*.mjs', 'src/**/*.test.ts'],
+    files: ['eslint.config.js', 'vite.config.ts', 'capacitor.config.ts', 'scripts/**/*.mjs', 'src/**/*.test.ts'],
     languageOptions: { globals: { ...globals.node } },
   },
   { files: ['**/*.js', '**/*.mjs'], extends: [tseslint.configs.disableTypeChecked] },
+  {
+    // The view reaches the device only through src/platform's interfaces.
+    files: ['src/ui/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@capacitor/*', '**/platform/native', '**/platform/native.ts'],
+              message: 'src/ui must not import Capacitor; go through src/platform.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // The service worker runs in its own global scope.
+    files: ['src/sw/**/*.js'],
+    languageOptions: { globals: { ...globals.serviceworker } },
+  },
   {
     // The game core is pure: no UI, no platform, no DOM.
     files: ['src/core/**/*.{ts,tsx}'],

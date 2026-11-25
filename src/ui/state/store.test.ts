@@ -241,3 +241,30 @@ describe('store', () => {
     }
   });
 });
+
+describe('back button', () => {
+  it('goes back a screen, keeps the run, and exits only from the title', async () => {
+    const storage = memoryStore();
+    const store = makeStore(storage);
+    await store.boot();
+    expect(store.back()).toBe('exit');
+
+    store.go('setup');
+    store.go('unlocks');
+    expect(store.back()).toBe('handled');
+    expect(store.get().screen).toBe('setup');
+    expect(store.back()).toBe('handled');
+    expect(store.get().screen).toBe('title');
+
+    store.startRun({ difficulty: 'still', background: 'clerk', keepsake: null });
+    store.beginPlay();
+    await store.flush();
+    expect(store.back()).toBe('handled');
+    expect(store.get().screen).toBe('title');
+    expect(store.get().hasRun).toBe(true);
+    await store.flush();
+    expect(storage.data.get(KEYS.run)).toBeTruthy();
+    store.continueRun();
+    expect(store.get().screen).toBe('game');
+  });
+});

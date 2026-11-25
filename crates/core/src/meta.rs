@@ -435,8 +435,48 @@ pub fn validate_ledger(l: &Ledger) -> Result<(), GameError> {
     Ok(())
 }
 
+/// A run's identity for "already applied". Built only from fields every save
+/// version has and no migration touches, so a ledger read from an older save
+/// matches the one the profile took before the upgrade.
 fn fingerprint(l: &Ledger) -> u32 {
-    hash_str(&serde_json::to_string(l).unwrap_or_default()) | 1
+    let key = format!(
+        "{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
+        l.seed,
+        serde_name(&l.difficulty),
+        l.background,
+        l.daily.as_deref().unwrap_or("-"),
+        serde_name(&l.end),
+        l.cause,
+        l.days,
+        l.nights,
+        l.kills,
+        l.shots,
+        l.noise_total,
+        l.metres,
+        l.score,
+    );
+    hash_str(&key) | 1
+}
+
+/// Fingerprints earlier builds stored: a hash of the whole ledger JSON, as
+/// written by save version 2 and by version 1 (which had no `places_visited`
+/// or `places_all`). Recognised so an upgrade never counts a run twice.
+fn legacy_fingerprints(l: &Ledger) -> [u32; 2] {
+    let v2 = serde_json::to_string(l).unwrap_or_default();
+    let added = format!(
+        ",\"places_visited\":{},\"places_all\":{}",
+        l.places_visited, l.places_all
+    );
+    let v1 = v2.replacen(&added, "", 1);
+    [hash_str(&v2) | 1, hash_str(&v1) | 1]
+}
+
+/// The serde name of a unit enum value ("still", "death").
+fn serde_name<T: Serialize>(v: &T) -> String {
+    serde_json::to_value(v)
+        .ok()
+        .and_then(|v| v.as_str().map(str::to_string))
+        .unwrap_or_default()
 }
 
 fn lifetime_earned(p: &Profile, m: &MarkDef) -> bool {
@@ -453,7 +493,7 @@ fn lifetime_earned(p: &Profile, m: &MarkDef) -> bool {
 pub fn apply_run_end(p: &mut Profile, l: &Ledger) -> Result<RunEndReport, GameError> {
     validate_ledger(l)?;
     let fp = fingerprint(l);
-    if fp == p.last_ledger {
+    if fp == p.last_ledger || legacy_fingerprints(l).contains(&p.last_ledger) {
         return Err(GameError::new("already_applied", "This run is already in the profile."));
     }
     p.last_ledger = fp;

@@ -1,5 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
+import { useBack } from '../back';
 import { Icon } from './Icon';
 
 export interface SheetProps {
@@ -12,10 +13,12 @@ const FOCUSABLE = 'button:not([disabled]), [href], input, select, textarea, [tab
 
 /**
  * A modal sheet rising from the bottom of the column. Focus moves into it,
- * stays inside while open, and returns to where it was on close. Escape closes.
+ * stays inside while open, and returns to where it was on close. Escape (and
+ * the Android back button) closes.
  */
 export function Sheet({ title, onClose, children }: SheetProps) {
   const ref = useRef<HTMLDivElement>(null);
+  useBack(true, onClose);
   useEffect(() => {
     const before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     ref.current?.querySelector<HTMLElement>('.sheet__title')?.focus();

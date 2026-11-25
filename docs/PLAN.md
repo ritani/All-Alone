@@ -165,7 +165,7 @@ crates/core/   Rust game core (lib + cdylib), no platform code
     wasm.rs    thin wasm-bindgen API (feature-gated)
 src/
   core/        generated wasm package + a typed TS wrapper (types mirror the Rust serde types)
-  platform/    storage, haptics, lifecycle (Capacitor with web fallback)
+  platform/    storage, haptics, lifecycle, PWA (Capacitor in the apps, web APIs otherwise)
   ui/          components, screens, icons, styles
   main.tsx
 ```
@@ -178,7 +178,9 @@ strings the core produced and hands them back for validation on load).
 - No remote code or assets: everything is bundled; no CDN, analytics, ads, or network calls.
 - Content-Security-Policy (meta tag + `_headers` for static hosts):
   `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:;
-  connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`.
+  connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none';
+  form-action 'none'; frame-ancestors 'none'`. Also in `vercel.json`; the build checks all three agree.
+  Threat model and controls: [SECURITY.md](../SECURITY.md).
   No inline scripts, no inline style attributes that need `unsafe-inline`.
 - Lint bans `eval`, `new Function`, `innerHTML`, `dangerouslySetInnerHTML`.
 - Saves are untrusted input, validated in Rust: size cap, strict `serde` parsing
@@ -195,12 +197,28 @@ strings the core produced and hands them back for validation on load).
 
 Each milestone ends with `npm run check` (typecheck + lint + tests + build) passing.
 
-| # | Milestone | Done when |
-|---|---|---|
-| M1 | **Foundation** — remove POC, scaffold TS/Vite/Preact/Vitest/ESLint (view layer), design tokens, icon primitives, title screen, CSP | App builds, title screen renders in the new visual language |
-| M2 | **Core simulation** — all of `crates/core` (Rust) with content and tests, including events, dog, skills, backgrounds, barter, weather, objectives, marks, ledger, remnants, profile, daily seed | Seeded headless playthroughs can both die and win; marks unlock in tests; save and profile round-trip; hostile saves rejected |
-| M3 | **Lock house UI** — new game (background, difficulty, daily river), vitals, journal, objectives, stations, store, crafting, choice events, sleep/night, dawn summary, autosave, death + ledger, marks and profile screens | A full day/night cycle is playable at home; marks unlock visibly |
-| M4 | **Expeditions UI** — map, packing, travel, rooms, searching, encounters, dog, barter, traps/fishing, codex, return, ferry ending | The whole game is playable start to end in a browser |
-| M5 | **Platforms and hardening** — Capacitor iOS/Android, storage adapter, safe areas, icons, PWA, headers, audit, docs | Web build passes audit; iOS and Android projects sync and build |
+| # | Milestone | Done when | Status |
+|---|---|---|---|
+| M1 | **Foundation** — remove POC, scaffold TS/Vite/Preact/Vitest/ESLint (view layer), design tokens, icon primitives, title screen, CSP | App builds, title screen renders in the new visual language | Done |
+| M2 | **Core simulation** — all of `crates/core` (Rust) with content and tests, including events, dog, skills, backgrounds, barter, weather, objectives, marks, ledger, remnants, profile, daily seed | Seeded headless playthroughs can both die and win; marks unlock in tests; save and profile round-trip; hostile saves rejected | Done |
+| M3 | **Lock house UI** — new game (background, difficulty, daily river), vitals, journal, objectives, stations, store, crafting, choice events, sleep/night, dawn summary, autosave, death + ledger, marks and profile screens | A full day/night cycle is playable at home; marks unlock visibly | Done |
+| M4 | **Expeditions UI** — map, packing, travel, rooms, searching, encounters, dog, barter, traps/fishing, codex, return, ferry ending | The whole game is playable start to end in a browser | Done |
+| M5 | **Platforms and hardening** — Capacitor iOS/Android, storage adapter, lifecycle and back button, safe areas, icons and splash, PWA/offline, headers, audit, CI, docs | Web build passes audit and runs offline; iOS and Android projects sync and build | Done |
 
 Out of scope for this pass: audio, localisation, cloud saves, store submission.
+
+## 6. What's next
+
+These need decisions or accounts only the owner has:
+
+- **Store submission**: App Store Connect and Google Play Console accounts,
+  listings, privacy declarations (no data collected), age ratings, screenshots.
+- **Signing**: an Apple Developer team; an Android upload keystore kept out of
+  the repository and a release `signingConfig`; Play App Signing.
+- **Bundle identifier**: replace the placeholder `com.allalone.game` everywhere
+  (see README, "Before publishing").
+- **Audio**: a sparse ambient bed and a handful of cues (wind, the river, the
+  stove, something at the door), with a mute that defaults sensibly on phones.
+- **Localisation**: the core's prose is English and lives in Rust content
+  tables; extracting it into per-language tables is the first step.
+- **Cloud saves**: deliberately absent; would need a threat model of its own.

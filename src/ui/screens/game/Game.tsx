@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Action, ProfileView, View } from '../../../core';
+import { useBack } from '../../back';
 import { Button } from '../../components/Button';
 import { Sheet } from '../../components/Sheet';
 import { TabBar, type Tab } from '../../components/TabBar';
@@ -84,6 +85,8 @@ export function Game({ view, fresh, seq, onAct: send, onMenu, unread = [], onRea
   }, [tab, view.phase, room]);
 
   const home = view.phase === 'home';
+  // Back from another tab returns to the house before it leaves the game.
+  useBack(home && tab !== 'house', () => setTab('house'));
   const tabs: Tab<TabId>[] = [
     { id: 'house', label: 'House', icon: 'house', flag: view.objectives.some((o) => o.urgent) },
     { id: 'store', label: 'Store', icon: 'store' },

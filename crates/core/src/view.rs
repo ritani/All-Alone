@@ -573,6 +573,9 @@ pub struct MarkEarned {
     pub new: bool,
 }
 
+/// What a missing ferry part says once the river has frozen.
+pub const FROZEN_PART: &str = "The river has frozen. The ferry will not run now.";
+
 pub const JOURNAL_IN_VIEW: usize = 80;
 
 fn kg(tenths: u32) -> String {
@@ -873,7 +876,7 @@ fn describe(s: &GameState, a: &Action) -> (String, &'static str, String, bool) {
             if *hurry { "Hurry".into() } else { "Walk".into() },
             "move",
             "map".into(),
-            *hurry,
+            *hurry && expedition::hurry_risky(s),
         ),
         TurnBack => ("Turn back".into(), "move", "back".into(), false),
         Enter { quiet } => {
@@ -1676,6 +1679,9 @@ pub fn view(s: &GameState) -> View {
                     in_store: crate::state::inv_count(&s.store, p) > 0,
                     need: if s.ferry.contains(*p) {
                         None
+                    } else if s.frozen {
+                        // No part is worth looking for once the river has closed.
+                        Some(FROZEN_PART.to_string())
                     } else if crate::state::inv_count(&s.store, p) > 0 {
                         Some(match home::can_install(s, p) {
                             Ok(()) => "In the store. Fit it.".to_string(),

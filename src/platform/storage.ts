@@ -4,8 +4,10 @@
  * The game only stores strings the core produced (run save, profile) and hands
  * them back to the core for validation on load. This module never parses them.
  *
- * The web implementation sits on `localStorage`. M5 adds a Capacitor
- * Preferences implementation behind the same interface.
+ * The web build sits on `localStorage`; the native apps sit on Capacitor
+ * Preferences (UserDefaults on iOS, SharedPreferences on Android). The choice
+ * is made once at start (`chooseStore`). Nothing is migrated between them:
+ * they never share a device profile.
  */
 
 export type StorageErrorCode = 'quota' | 'unavailable' | 'failed';
@@ -106,4 +108,93 @@ export function memoryStore(initial: Record<string, string> = {}): KeyValueStore
       return Promise.resolve();
     },
   };
+}
+
+/**
+ * The part of Capacitor Preferences the game uses. Declared here so this
+ * module (and its tests) never load Capacitor.
+ */
+export interface PreferencesLike {
+  get(options: { key: string }): Promise<{ value: string | null }>;
+  set(options: { key: string; value: string }): Promise<void>;
+  remove(options: { key: string }): Promise<void>;
+}
+
+/** A store over Capacitor Preferences (native apps). */
+export function preferencesStore(prefs: PreferencesLike): KeyValueStore {
+  return {
+    async get(key) {
+      try {
+        const { value } = await prefs.get({ key });
+        return typeof value === 'string' ? value : null;
+      } catch {
+        throw new StorageError('unavailable', 'The save could not be read.');
+      }
+    },
+    async set(key, value) {
+      try {
+        await prefs.set({ key, value });
+      } catch {
+        throw new StorageError('failed', 'The game could not be saved.');
+      }
+    },
+    async remove(key) {
+      try {
+        await prefs.remove({ key });
+      } catch {
+        throw new StorageError('failed', 'The save could not be removed.');
+      }
+    },
+  };
+}
+
+/**
+ * A store whose backing is loaded on first use (the native plugin code is
+ * only fetched inside the apps). A failed load reads as unavailable storage.
+ */
+export function lazyStore(load: () => Promise<KeyValueStore>): KeyValueStore {
+  let pending: Promise<KeyValueStore> | null = null;
+  const store = (): Promise<KeyValueStore> =>
+    (pending ??= load().catch(() => {
+      throw new StorageError('unavailable', 'Storage could not be opened.');
+    }));
+  return {
+    get: async (key) => (await store()).get(key),
+    set: async (key, value) => (await store()).set(key, value),
+    remove: async (key) => (await store()).remove(key),
+  };
+}
+
+/** Native apps keep saves in Preferences; the web keeps them in localStorage. */
+export function chooseStore(opts: {
+  native: boolean;
+  preferences: () => Promise<PreferencesLike>;
+  web?: () => KeyValueStore;
+}): KeyValueStore {
+  if (opts.native) return lazyStore(async () => preferencesStore(await opts.preferences()));
+  return (opts.web ?? webStore)();
+}
+
+/** Upper bound for the UI-only unread list as stored (bytes of JSON). */
+export const MAX_UNREAD_BYTES = 8 * 1024;
+const UNREAD_ID = /^[a-z0-9_]{1,40}$/;
+
+/**
+ * Parse the stored unread-codex list. Storage is untrusted: anything that is
+ * not a short JSON array of plain ids yields an empty or filtered list.
+ */
+export function parseUnread(text: string | null): string[] {
+  if (text === null || text.length > MAX_UNREAD_BYTES) return [];
+  let v: unknown;
+  try {
+    v = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(v)) return [];
+  const out: string[] = [];
+  for (const x of v.slice(0, 200)) {
+    if (typeof x === 'string' && UNREAD_ID.test(x) && !out.includes(x)) out.push(x);
+  }
+  return out;
 }

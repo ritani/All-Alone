@@ -221,3 +221,39 @@ fn version_1_saves_load() {
     all_alone_core::meta::apply_run_end(&mut p, fresh.ledger.as_ref().unwrap()).unwrap();
     assert_eq!(p.totals.runs, 2);
 }
+
+/// A version 1 run that ended after its ledger was entered in a version 1
+/// profile (the game closed before the run save was removed) is not counted
+/// again once both are migrated: the run's fingerprint survives migration.
+#[test]
+fn migrated_ended_run_is_not_counted_twice() {
+    let mut p = profile_from_string(PROFILE_V1).unwrap();
+    let e = load_from_string(RUN_V1_ENDED).unwrap();
+    let l = e.ledger.as_ref().unwrap();
+    let before = p.totals.clone();
+    let err = all_alone_core::meta::apply_run_end(&mut p, l).expect_err("already in the profile");
+    assert_eq!(err.code, "already_applied");
+    assert_eq!(p.totals, before);
+
+    // The same holds once the profile has been re-saved at the current version.
+    let mut p = profile_from_string(&profile_to_string(&p)).unwrap();
+    assert_eq!(
+        all_alone_core::meta::apply_run_end(&mut p, l).unwrap_err().code,
+        "already_applied"
+    );
+
+    // And a run applied by this build is recognised after its save round-trips.
+    let mut fresh = load_from_string(RUN_V1_LIVE).unwrap();
+    let mut j = all_alone_core::Outcome::default();
+    all_alone_core::systems::forfeit(&mut fresh, &mut j);
+    let mut p2 = profile_from_string(PROFILE_V1).unwrap();
+    all_alone_core::meta::apply_run_end(&mut p2, fresh.ledger.as_ref().unwrap()).unwrap();
+    let reloaded = load_from_string(&save_to_string(&fresh)).unwrap();
+    let mut p2 = profile_from_string(&profile_to_string(&p2)).unwrap();
+    assert_eq!(
+        all_alone_core::meta::apply_run_end(&mut p2, reloaded.ledger.as_ref().unwrap())
+            .unwrap_err()
+            .code,
+        "already_applied"
+    );
+}

@@ -1,7 +1,7 @@
 /**
  * Haptic feedback. Quiet by design: a tick for marks and skill gains, a
- * heavier pulse for harm. M5 adds a Capacitor Haptics implementation behind
- * the same interface.
+ * heavier pulse for harm. The web uses `navigator.vibrate` where it exists;
+ * the native apps use the Capacitor Haptics plugin (`nativeHaptics`).
  */
 export type HapticKind = 'tick' | 'warn' | 'harm';
 
@@ -30,6 +30,34 @@ export function webHaptics(): Haptics {
       } catch {
         // Vibration is a nicety; never let it break play.
       }
+    },
+  };
+}
+
+/** The part of Capacitor Haptics the game uses (values match its enums). */
+export interface HapticsLike {
+  impact(options: { style: 'LIGHT' | 'MEDIUM' | 'HEAVY' }): Promise<void>;
+  notification(options: { type: 'SUCCESS' | 'WARNING' | 'ERROR' }): Promise<void>;
+}
+
+/** Native haptics: a light tap, a warning, a heavy blow. Failures are ignored. */
+export function nativeHaptics(load: () => Promise<HapticsLike>): Haptics {
+  let pending: Promise<HapticsLike> | null = null;
+  return {
+    pulse(kind) {
+      pending ??= load();
+      pending
+        .then((h) => {
+          switch (kind) {
+            case 'tick':
+              return h.impact({ style: 'LIGHT' });
+            case 'warn':
+              return h.notification({ type: 'WARNING' });
+            case 'harm':
+              return h.impact({ style: 'HEAVY' });
+          }
+        })
+        .catch(() => undefined);
     },
   };
 }

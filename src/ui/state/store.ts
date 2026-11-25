@@ -24,7 +24,7 @@ import {
   type View,
 } from '../../core';
 import { noHaptics, type Haptics } from '../../platform/haptics';
-import { KEYS, StorageError, memoryStore, type KeyValueStore } from '../../platform/storage';
+import { KEYS, StorageError, memoryStore, parseUnread, type KeyValueStore } from '../../platform/storage';
 
 export type Screen =
   | 'loading'
@@ -38,6 +38,9 @@ export type Screen =
   | 'unlocks'
   | 'howto'
   | 'fatal';
+
+/** Upper bound for a rejected save kept aside (characters); real saves are well under 1 MiB. */
+const MAX_KEPT_ASIDE = 1024 * 1024;
 
 export type ToastTone = 'quiet' | 'notice' | 'danger';
 
@@ -138,6 +141,8 @@ export class Store {
   /** Writes are queued so they land in order. */
   private writes: Promise<void> = Promise.resolve();
   private toastSeq = 0;
+  /** The unlocks page was opened from the new-run page (back returns there). */
+  private cameFromSetup = false;
   private readonly timers = new Map<number, ReturnType<typeof setTimeout>>();
 
   constructor(deps: StoreDeps) {
@@ -209,7 +214,7 @@ export class Store {
       } catch (e) {
         if (this.isBroken(e)) throw e;
         // Never half-load. Keep the bad string aside rather than destroy it.
-        this.persist(KEYS.profileRejected, stored);
+        this.keepAside(KEYS.profileRejected, stored);
         this.notice(
           `Your record could not be read (${reason(e)}). It has been kept aside, and a new record started.`,
         );
@@ -231,7 +236,7 @@ export class Store {
       run = Run.load(stored);
     } catch (e) {
       if (this.isBroken(e)) throw e;
-      this.persist(KEYS.runRejected, stored);
+      this.keepAside(KEYS.runRejected, stored);
       this.remove(KEYS.run);
       this.notice(`The saved run could not be read (${reason(e)}). It has been kept aside. Begin again.`);
       return;
@@ -249,14 +254,8 @@ export class Store {
   }
 
   private async loadUnread(): Promise<string[]> {
-    const text = await this.read(KEYS.codexUnread);
-    if (text === null) return [];
-    try {
-      const v: unknown = JSON.parse(text);
-      return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.length <= 40).slice(0, 200) : [];
-    } catch {
-      return [];
-    }
+    // UI-only state, but still untrusted: parsed, filtered and size-capped.
+    return parseUnread(await this.read(KEYS.codexUnread));
   }
 
   /** An unread codex entry has been opened. */
@@ -270,8 +269,37 @@ export class Store {
   // ------------------------------------------------------------ navigation
 
   go(screen: Exclude<Screen, 'loading' | 'fatal' | 'game' | 'ended' | 'intro'>): void {
+    if (screen === 'unlocks') this.cameFromSetup = this.state.screen === 'setup';
     this.refreshProfile();
     this.set({ screen });
+  }
+
+  /**
+   * The Android back button, once no sheet is open: go back a screen. Never
+   * ends or drops a run (it is saved after every action; leaving the game
+   * goes to the title, where Continue picks it up). 'exit' only from the title.
+   */
+  back(): 'handled' | 'exit' {
+    switch (this.state.screen) {
+      case 'title':
+      case 'fatal':
+        return 'exit';
+      case 'loading':
+        return 'handled';
+      case 'game':
+      case 'intro':
+        this.go('title');
+        return 'handled';
+      case 'ended':
+        this.leaveEnded();
+        return 'handled';
+      case 'unlocks':
+        this.go(this.cameFromSetup ? 'setup' : 'title');
+        return 'handled';
+      default:
+        this.go('title');
+        return 'handled';
+    }
   }
 
   continueRun(): void {
@@ -566,6 +594,15 @@ export class Store {
           this.storageFailed(e);
         }),
     );
+  }
+
+  /**
+   * Keep a rejected save for the player (never parsed again by the game).
+   * Something far larger than any real save is not worth the room: dropped.
+   */
+  private keepAside(key: string, value: string): void {
+    if (value.length <= MAX_KEPT_ASIDE) this.persist(key, value);
+    else this.remove(key);
   }
 
   private remove(key: string): void {

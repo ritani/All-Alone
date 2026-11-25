@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'preact/hooks';
 import { initCore } from '../core';
-import { webHaptics } from '../platform/haptics';
-import { webStore } from '../platform/storage';
+import { createPlatform } from '../platform';
+import { popBack } from './back';
 import { Toasts } from './components/Toasts';
 import { Ended } from './screens/Ended';
 import { Game } from './screens/game/Game';
@@ -13,9 +13,13 @@ import { Title } from './screens/Title';
 import { StoreContext, useAppState, useStoreInstance } from './state/context';
 import { Store } from './state/store';
 
-/** Dev review route: `?kit` shows the primitives sheet. */
+/**
+ * Dev review route: `?kit` shows the primitives sheet. Development builds
+ * only: in production `import.meta.env.DEV` is false and the Kit is dropped
+ * from the bundle.
+ */
 function wantsKit(): boolean {
-  return new URLSearchParams(window.location.search).has('kit');
+  return import.meta.env.DEV && new URLSearchParams(window.location.search).has('kit');
 }
 
 function Screens() {
@@ -96,7 +100,7 @@ function Screens() {
       break;
     case 'unlocks':
       screen = s.profile && (
-        <Unlocks profile={s.profile} onBack={() => store.go('title')} onUnlock={(u) => store.unlock(u)} />
+        <Unlocks profile={s.profile} onBack={() => void store.back()} onUnlock={(u) => store.unlock(u)} />
       );
       break;
     case 'howto':
@@ -113,14 +117,20 @@ function Screens() {
 }
 
 export function App() {
+  const platform = useMemo(() => createPlatform(), []);
   const store = useMemo(
-    () => new Store({ storage: webStore(), haptics: webHaptics(), init: () => initCore() }),
-    [],
+    () => new Store({ storage: platform.storage, haptics: platform.haptics, init: () => initCore() }),
+    [platform],
   );
   useEffect(() => {
-    if (!wantsKit()) void store.boot();
-  }, [store]);
-  if (wantsKit()) return <Kit />;
+    if (import.meta.env.DEV && wantsKit()) return undefined;
+    void store.boot();
+    return platform.start({
+      flush: () => store.flush(),
+      back: () => (popBack() ? 'handled' : store.back()),
+    });
+  }, [store, platform]);
+  if (import.meta.env.DEV && wantsKit()) return <Kit />;
   return (
     <StoreContext.Provider value={store}>
       <Screens />

@@ -86,14 +86,21 @@ fn lower_the(name: &str) -> String {
     }
 }
 
-/// Join a list in plain English: "a, b and c".
+/// Join a list in plain English: "a, b and c". When a name has its own "and"
+/// ("yarrow and willow bark"), the last join takes a comma too, so the list
+/// still reads as a list: "rope, yarrow and willow bark, and a tin".
 pub fn list(parts: &[String]) -> String {
     match parts.len() {
         0 => String::new(),
         1 => parts[0].clone(),
         _ => {
             let (last, rest) = parts.split_last().unwrap_or((&parts[0], &[]));
-            format!("{} and {}", rest.join(", "), last)
+            let sep = if parts.iter().any(|p| p.contains(" and ")) {
+                ", and "
+            } else {
+                " and "
+            };
+            format!("{}{sep}{last}", rest.join(", "))
         }
     }
 }
@@ -131,6 +138,23 @@ mod tests {
         assert_eq!(count(1, "measure", "measures"), "1 measure");
         assert_eq!(count(0, "measure", "measures"), "0 measures");
         assert_eq!(count(3, "day", "days"), "3 days");
+    }
+
+    #[test]
+    fn lists_read_as_lists() {
+        let l = |xs: &[&str]| list(&xs.iter().map(|x| x.to_string()).collect::<Vec<_>>());
+        assert_eq!(l(&[]), "");
+        assert_eq!(l(&["rope"]), "rope");
+        assert_eq!(l(&["rope", "a tin"]), "rope and a tin");
+        assert_eq!(l(&["rope", "a tin", "nails"]), "rope, a tin and nails");
+        assert_eq!(
+            l(&["rope", "yarrow and willow bark", "a tin"]),
+            "rope, yarrow and willow bark, and a tin"
+        );
+        assert_eq!(
+            l(&["rope", "yarrow and willow bark"]),
+            "rope, and yarrow and willow bark"
+        );
     }
 
     /// Every harm at every kind of place reads as a sentence.

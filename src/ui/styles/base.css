@@ -140,3 +140,50 @@ a {
 body {
   transition: color var(--fade-slow) var(--ease), background-color var(--fade-slow) var(--ease);
 }
+
+/* ------------------------------------------------------------------ Touch feel
+   The game is played with taps: no text selection, magnifier or link
+   callout on a long press, and no rubber-band bounce of the whole page.
+   What is worth reading and keeping stays selectable: the journal, codex
+   entries, and other prose. Pinch-zoom and text scaling are left alone
+   (the viewport does not block zoom). */
+html {
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
+}
+
+body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.journal,
+.prose,
+.codex__text,
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* Headings that receive focus programmatically (screen changes, sheets) for
+   screen readers are not controls: no focus ring on them. */
+[tabindex='-1']:focus,
+[tabindex='-1']:focus-visible {
+  outline: none;
+}
+
+/* Under a notch or status bar, scrolled pages slide beneath a strip of the
+   field instead of showing through the clock and battery. */
+body::before {
+  content: '';
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: var(--c-field);
+  pointer-events: none;
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The game's field (near-black) and line (bone) colours. -->
+    <color name="field">#0B0C0D</color>
+    <color name="line">#D8D4C8</color>
+</resources>
