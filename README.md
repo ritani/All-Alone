@@ -80,7 +80,10 @@ primitive on one page (the route is compiled out of production builds).
 
 ### Web
 
-`npm run build` and deploy `dist/` to any static host over HTTPS. Send the
+The project deploys to Cloudflare Pages from GitHub Actions: `main` is production
+and `MVP` is staging. Setup is in [docs/DEPLOY.md](docs/DEPLOY.md).
+
+To host it elsewhere: `npm run build` and deploy `dist/` to any static host over HTTPS. Send the
 security headers: `public/_headers` (Netlify, Cloudflare Pages) is copied into
 `dist/`; `vercel.json` carries the same for Vercel; for nginx, see
 [SECURITY.md](SECURITY.md). The service worker (`dist/sw.js`, generated at
