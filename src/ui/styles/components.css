@@ -1,0 +1,190 @@
+/* Primitive components. Colours and sizes come from tokens.css only. */
+
+/* Icon */
+.icon {
+  flex: none;
+  overflow: visible;
+}
+
+/* Small tracked capitals, shared by labels, buttons and rules. */
+.label,
+.btn__label,
+.rule__text,
+.meter__label {
+  font-family: var(--font-ui);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  line-height: var(--lh-tight);
+}
+
+/* Button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  min-height: var(--touch);
+  min-width: var(--touch);
+  padding: 0 var(--sp-5);
+  color: var(--c-line);
+  border: var(--lw-hair) solid transparent;
+  background: transparent;
+  transition: background-color var(--fade) var(--ease), color var(--fade) var(--ease),
+    border-color var(--fade) var(--ease);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.btn__label {
+  /* Optical balance for tracked capitals. */
+  padding-left: var(--track-label);
+}
+
+.btn--block {
+  display: flex;
+  width: 100%;
+}
+
+.btn--primary {
+  border-color: var(--c-line);
+}
+
+.btn--quiet {
+  color: var(--c-dim);
+  border-color: var(--c-faint);
+}
+
+.btn--danger {
+  color: var(--c-danger);
+  border-color: var(--c-danger);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--c-panel);
+}
+
+.btn--quiet:hover:not(:disabled) {
+  color: var(--c-line);
+}
+
+.btn:active:not(:disabled) {
+  background: var(--c-line);
+  color: var(--c-field);
+}
+
+.btn--danger:active:not(:disabled) {
+  background: var(--c-danger);
+  color: var(--c-field);
+}
+
+.btn:disabled {
+  color: var(--c-faint);
+  border-color: var(--c-faint);
+  cursor: not-allowed;
+}
+
+/* Rule and section header */
+.rule {
+  height: 0;
+  margin: var(--sp-5) 0;
+  border: 0;
+  border-top: var(--lw-hair) solid var(--c-faint);
+}
+
+.rule--label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: auto;
+  margin: 0 0 var(--sp-4);
+  border: 0;
+  color: var(--c-dim);
+}
+
+.rule--label::after {
+  content: '';
+  flex: 1;
+  border-top: var(--lw-hair) solid var(--c-faint);
+}
+
+/* Panel */
+.panel {
+  padding: var(--sp-4);
+  background: var(--c-panel);
+  border: var(--lw-hair) solid var(--c-faint);
+}
+
+.panel__body > * + * {
+  margin-top: var(--sp-4);
+}
+
+/* Meter */
+.meter {
+  color: var(--c-line);
+}
+
+.meter__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-1);
+}
+
+.meter__label {
+  flex: 1;
+  color: var(--c-dim);
+}
+
+.meter__value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+  text-align: right;
+}
+
+.meter__bar {
+  width: 100%;
+  height: 5px;
+  overflow: visible;
+}
+
+.meter__track,
+.meter__tick {
+  stroke: var(--c-faint);
+  stroke-width: 1;
+}
+
+.meter__fill {
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: butt;
+}
+
+.meter--low {
+  color: var(--c-danger);
+}
+
+.meter--low .meter__label {
+  color: var(--c-danger);
+}
+
+/* Prose (journal voice) */
+.prose {
+  font-family: var(--font-prose);
+  font-size: var(--fs-prose);
+  line-height: var(--lh-body);
+  color: var(--c-line);
+}
+
+.prose--dim {
+  color: var(--c-dim);
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

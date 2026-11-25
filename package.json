@@ -1,18 +1,31 @@
 {
-  "name": "buried-city",
-  "version": "1.0.0",
-  "description": "A zombie survival game inspired by Buried Town",
-  "main": "index.html",
-  "scripts": {
-    "start": "npx http-server -p 8000 -c-1",
-    "dev": "npx http-server -p 8000 -c-1 -o"
+  "name": "all-alone",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ALL ALONE: a survival-horror game of a lock house, a river and the Stillness.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
   },
-  "keywords": [
-    "game",
-    "zombie",
-    "survival",
-    "phaser"
-  ],
-  "author": "",
-  "license": "MIT"
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.15.0",
+    "globals": "17.14.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.74.0",
+    "vite": "8.3.8",
+    "vitest": "5.1.1"
+  },
+  "dependencies": {
+    "preact": "11.2.0"
+  }
 }

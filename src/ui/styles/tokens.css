@@ -1,0 +1,55 @@
+/* ALL ALONE design tokens. The only place raw colours, fonts and sizes live. */
+:root {
+  color-scheme: dark;
+
+  /* Palette */
+  --c-field: #0b0c0d;   /* page background */
+  --c-panel: #111315;   /* raised surfaces */
+  --c-line: #d8d4c8;    /* text and line art (bone) */
+  --c-dim: #7c7a72;     /* secondary text, inactive lines */
+  --c-faint: #3a3a37;   /* hairline rules, meter tracks, disabled */
+  --c-danger: #a3271f;  /* real danger only */
+
+  /* Type stacks: system fonts only */
+  --font-prose: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia,
+    'Times New Roman', serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* Type scale */
+  --fs-label: 0.6875rem;   /* 11px: tracked capitals */
+  --fs-small: 0.8125rem;   /* 13px */
+  --fs-body: 1rem;         /* 16px */
+  --fs-prose: 1.0625rem;   /* 17px: journal */
+  --fs-title: 2.25rem;     /* 36px: wordmark */
+  --lh-tight: 1.2;
+  --lh-body: 1.55;
+  --track-label: 0.18em;
+  --track-wordmark: 0.42em;
+
+  /* Spacing (4px base) */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4rem;
+
+  /* Lines */
+  --lw-hair: 1px;
+  --lw-icon: 1.25;          /* SVG stroke width in viewBox units (24 grid) */
+  --lw-art: 1;              /* illustration stroke, non-scaling */
+  --lw-focus: 1px;
+
+  /* Layout */
+  --col-max: 30rem;         /* 480px */
+  --touch: 2.75rem;         /* 44px */
+  --icon: 1.5rem;           /* 24px */
+
+  /* Motion: slow opacity fades only */
+  --fade-slow: 600ms;
+  --fade: 240ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}

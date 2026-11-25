@@ -1,0 +1,137 @@
+/* Reset and page frame. No rounded corners, gradients or shadows anywhere. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--c-field);
+  color: var(--c-line);
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+}
+
+h1, h2, h3, h4, p, ul, ol, figure, blockquote {
+  margin: 0;
+}
+
+ul, ol {
+  padding: 0;
+  list-style: none;
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: var(--lw-hair);
+}
+
+::selection {
+  background: var(--c-line);
+  color: var(--c-field);
+}
+
+/* Keyboard focus: a crisp bone outline, offset from the element. */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: var(--lw-focus) solid var(--c-line);
+  outline-offset: 3px;
+}
+
+/* App frame: portrait-first single column, centred, safe-area aware. */
+#app {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.frame {
+  width: 100%;
+  max-width: var(--col-max);
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding-top: max(var(--sp-5), env(safe-area-inset-top));
+  padding-right: max(var(--sp-5), env(safe-area-inset-right));
+  padding-bottom: max(var(--sp-5), env(safe-area-inset-bottom));
+  padding-left: max(var(--sp-5), env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fade-in for screens; removed under reduced motion. */
+.fade-in {
+  animation: fade-in var(--fade-slow) var(--ease) both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

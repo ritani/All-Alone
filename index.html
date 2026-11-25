@@ -1,59 +1,22 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>Buried City - Zombie Survival Game</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #000;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-        }
-
-        #game-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        canvas {
-            display: block;
-            margin: 0 auto;
-        }
-    </style>
-</head>
-<body>
-    <div id="game-container"></div>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/scenes/SplashScene.js"></script>
-    <script src="js/scenes/MenuScene.js"></script>
-    <script src="js/scenes/GameScene.js"></script>
-    <script src="js/scenes/MapScene.js"></script>
-    <script src="js/scenes/ExpeditionPlanScene.js"></script>
-    <script src="js/scenes/AreaExplorationScene.js"></script>
-    <script src="js/scenes/LootSelectionScene.js"></script>
-    <script src="js/scenes/TravelAnimationScene.js"></script>
-    <script src="js/scenes/ShelterStorageScene.js"></script>
-    <script src="js/managers/InventoryManager.js"></script>
-    <script src="js/managers/CraftingManager.js"></script>
-    <script src="js/managers/LocationManager.js"></script>
-    <script src="js/managers/ExpeditionManager.js"></script>
-    <script src="js/managers/BuildingManager.js"></script>
-    <script src="js/managers/ShelterManager.js"></script>
-    <script src="js/ui/ExpeditionHUD.js"></script>
-    <script src="js/ui/VitalStatsHUD.js"></script>
-    <script src="js/main.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0b0c0d" />
+    <meta name="description" content="ALL ALONE. A lock house, a river, and the Stillness." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>ALL ALONE</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>ALL ALONE needs JavaScript to run.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
