@@ -1226,7 +1226,7 @@ pub static EVENTS: &[EventDef] = &[
         ctx: Ctx::Arrive,
         place: Some("weir"),
         weight: 30,
-        req: &[Cond::Trades(2), Cond::Flag("widow_here")],
+        req: &[Cond::MinDay(15), Cond::Trades(4), Cond::Flag("widow_here")],
         title: "The widow's question",
         text: "The widow writes on her slate and turns it to you: Have you been to the ferry.",
         opts: &[

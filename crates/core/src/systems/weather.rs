@@ -36,8 +36,8 @@ pub fn temperature(s: &GameState) -> i32 {
 }
 
 pub fn temperature_at(day: u32, time: u32, weather: Weather, offset: i32) -> i32 {
-    // Tenths of a degree: 13.0 falling 0.42 a day.
-    let t = 130 - (day.saturating_sub(1).min(MAX_DAY) as i32) * 42 / 10;
+    // Tenths of a degree: 14.0 falling 0.55 a day (near freezing by day 25).
+    let t = 140 - (day.saturating_sub(1).min(MAX_DAY) as i32) * 55 / 10;
     let hour = time / 60;
     let tod = match hour {
         0..=5 => -45,

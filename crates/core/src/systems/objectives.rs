@@ -135,6 +135,15 @@ pub fn list(s: &GameState) -> Vec<Objective> {
         } else if let Some(pt) = missing_installed.iter().find(|pt| inv_count(&s.pack, pt) == 0) {
             v.push(o("find_part", where_part(s, pt), false, "ferry"));
         }
+        let drum = items::get("fuel_drum").map_or(0, |d| d.weight);
+        if !s.ferry.contains("fuel_drum") && inv_count(&s.store, "fuel_drum") == 0 && inventory::capacity(s) < drum {
+            v.push(o(
+                "bag",
+                "The fuel drum is too heavy to carry as you are. Find or sew a bag.",
+                false,
+                "pack",
+            ));
+        }
     }
     if s.frozen {
         v.push(o(
@@ -153,6 +162,15 @@ pub fn list(s: &GameState) -> Vec<Objective> {
         ));
     }
 
+    let unknown = s.places.values().filter(|p| !p.known).count();
+    if s.level(Station::Radio) == 0 && s.day() >= 4 && unknown > 0 {
+        v.push(o(
+            "radio",
+            "Get the wireless working. Someone out there may say where things are.",
+            false,
+            "radio",
+        ));
+    }
     if inventory::water_capacity(s) <= 4 {
         v.push(o("water_store", "Find something to hold water.", false, "water"));
     }

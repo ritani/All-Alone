@@ -96,7 +96,7 @@ pub fn warmth_target(s: &GameState, act: Activity) -> i32 {
         }
         t.clamp(0, 100)
     } else {
-        let mut t = 42 + temp * 4 + inventory::insulation(s);
+        let mut t = 38 + temp * 4 + inventory::insulation(s);
         if s.weather == Weather::Rain && !inventory::rainproof(s) {
             t -= 12;
         }

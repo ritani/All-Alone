@@ -146,8 +146,8 @@ pub static CODEX: &[CodexDef] = &[
     CodexDef {
         id: "note_lowe",
         title: "Note pinned in the loft",
-        text: "Wren's ferry: hull patch made up, on the trestle in the dock. Coil is at Pell's for rewinding. Belt to be cut from the mill's spare belting in the engine house. Fuel at the wharf. Tell Ada it will be ready by the frost.",
-        reveals: Some("garage"),
+        text: "Wren's ferry: hull patch made up, on the trestle in the dock. Coil gone away to be rewound, Wren knows where. Belt to be cut from the mill's spare belting in the engine house. Fuel at the wharf. Tell Ada it will be ready by the frost.",
+        reveals: None,
         ..C
     },
     CodexDef {
@@ -161,6 +161,7 @@ pub static CODEX: &[CodexDef] = &[
         id: "note_daybook",
         title: "Station day book",
         text: "01.50 Complaint, noise, Mill Street. 02.05 Complaint, noise, Quarry Lane. 02.09 Complaint, noise, everywhere. 02.10. The pen line runs off the page.",
+
         ..C
     },
     CodexDef {
@@ -298,7 +299,7 @@ pub static CODEX: &[CodexDef] = &[
         title: "A mechanic's question",
         text: "A man asking anyone near Calder's Reach whether Pell's garage still stands, because his engine parts are there. Nobody answers him.",
         reveals: Some("garage"),
-        day: 8,
+        day: 24,
         radio: 2,
     },
     CodexDef {
@@ -316,7 +317,7 @@ pub static CODEX: &[CodexDef] = &[
         title: "A bargeman",
         text: "A bargeman, drunk or tired, saying he left good fuel at the Calder coal wharf and he would give a lot to have it now.",
         reveals: Some("wharf"),
-        day: 11,
+        day: 20,
         radio: 1,
     },
     CodexDef {

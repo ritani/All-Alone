@@ -139,9 +139,9 @@ pub static STATIONS: [StationDef; 9] = [
             lvl(
                 "Full workshop",
                 "Coil winding, a frame pack. Mending is faster.",
-                &[("scrap", 4), ("parts", 3), ("nails", 4)],
+                &[("scrap", 6), ("parts", 4), ("nails", 6), ("plank", 2)],
                 2,
-                180,
+                240,
                 5,
             ),
         ],
@@ -259,7 +259,7 @@ pub static STATIONS: [StationDef; 9] = [
             lvl(
                 "Wireless with aerial",
                 "Further voices. A better forecast. You can answer.",
-                &[("wire", 4), ("scrap", 2), ("rope", 1)],
+                &[("wire", 2), ("scrap", 2), ("rope", 1)],
                 1,
                 90,
                 3,

@@ -217,7 +217,7 @@ items! {
     "waders" => { name: "Waders", desc: "Rubber to the chest. Flooded rooms stop costing you warmth.", icon: "coat", weight: 14, value: 8, kind: ItemKind::Clothing { slot: Slot::Legs, insulation: 2, rainproof: false, wading: true } },
     // Ferry parts
     "hull_patch" => { name: "Hull patch", desc: "Copper sheet, pitch and rivets. For the ferry's split plank.", icon: "part", weight: 30, value: 20, kind: ItemKind::Part },
-    "fuel_drum" => { name: "Fuel drum", desc: "Forty litres of paraffin. Heavy.", icon: "part", weight: 110, value: 24, kind: ItemKind::Part },
+    "fuel_drum" => { name: "Fuel drum", desc: "Forty litres of paraffin. Too heavy to carry without a proper bag.", icon: "part", weight: 140, value: 24, kind: ItemKind::Part },
     "spark_coil" => { name: "Spark coil", desc: "Wound copper in a black case. The ferry's engine will not fire without it.", icon: "part", weight: 8, value: 20, kind: ItemKind::Part },
     "drive_belt" => { name: "Drive belt", desc: "Stitched leather belting, oiled.", icon: "part", weight: 14, value: 18, kind: ItemKind::Part },
     "coil_cracked" => { name: "Cracked spark coil", desc: "The Kittiwake's coil. The windings have split. It needs rewinding at a bench.", icon: "part", weight: 8, value: 8 },
@@ -226,6 +226,7 @@ items! {
     "key_dispensary" => { name: "Dispensary key", desc: "Small, brass, tagged 'Disp.'", icon: "key", weight: 0, value: 0, kind: ItemKind::Key },
     "key_station" => { name: "Station keys", desc: "A ring of three. One is stamped 'Sgt.'", icon: "key", weight: 0, value: 0, kind: ItemKind::Key },
     "key_mill" => { name: "Mill office key", desc: "Long iron key on a loop of string.", icon: "key", weight: 0, value: 0, kind: ItemKind::Key },
+    "key_engine" => { name: "Engine house key", desc: "Heavy, stamped 'E.H.', on the manager's ring.", icon: "key", weight: 0, value: 0, kind: ItemKind::Key },
     "key_wharf" => { name: "Wharf padlock key", desc: "Tagged 'Fuel store'.", icon: "key", weight: 0, value: 0, kind: ItemKind::Key },
     // Seeds
     "seed_kale" => { name: "Kale seed", desc: "A paper twist. Grows in the cold.", icon: "herb", weight: 0, value: 3, kind: ItemKind::Seed { crop: "kale", days: 6 } },

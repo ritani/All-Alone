@@ -168,6 +168,8 @@ fn upkeep(s: &GameState) -> Option<Action> {
 
 const BUILD_ORDER: &[(Station, u8)] = &[
     (Station::Workbench, 1),
+    (Station::Radio, 1),
+    (Station::Radio, 2),
     (Station::Stove, 1),
     (Station::Barricade, 1),
     (Station::Workbench, 2),
@@ -206,6 +208,7 @@ const CRAFT_ORDER: &[&str] = &[
     "rewind_coil",
     "lockpicks",
     "salvage_nails",
+    "strip_wire",
     "snare",
     "night_line",
     "bandages",
@@ -372,7 +375,7 @@ fn home(s: &GameState) -> Action {
     }
     if s.ferry.len() == 4 {
         // Put by food and water for the voyage, then go.
-        if inv_count(&s.store, "water_clean") < 6 {
+        if inv_count(&s.store, "water_clean") < 7 {
             if let Some(a) = first(
                 s,
                 [
@@ -395,7 +398,7 @@ fn home(s: &GameState) -> Action {
         if s.traps.hooked > 0 && ok(s, &CheckLine) {
             return CheckLine;
         }
-        if inventory::meal_count(&s.store) < 8 && ok(s, &Forage) {
+        if inventory::meal_count(&s.store) < 10 && ok(s, &Forage) {
             return Forage;
         }
     }
@@ -427,7 +430,12 @@ fn home(s: &GameState) -> Action {
             "rucksack" => inv_count(&s.store, "rucksack") + inv_count(&s.store, "frame_pack") == 0,
             "frame_pack" => inv_count(&s.store, "frame_pack") == 0,
             "lockpicks" => inv_count(&s.store, "lockpicks") == 0,
-            "salvage_nails" => inv_count(&s.store, "nails") < 6 && inv_count(&s.store, "plank") > 1,
+            "strip_wire" => {
+                inv_count(&s.store, "wire") < reserved(s, "wire") && inv_count(&s.store, "parts") > reserved(s, "parts")
+            }
+            "salvage_nails" => {
+                inv_count(&s.store, "nails") < 6 && inv_count(&s.store, "plank") > reserved(s, "plank") + 1
+            }
             "snare" => s.traps.snares + inv_count(&s.store, "snare") < 4,
             "night_line" => !s.traps.line && inv_count(&s.store, "fishing_line") == 0,
             "bandages" => inv_count(&s.store, "bandage") < 3,
@@ -451,7 +459,8 @@ fn home(s: &GameState) -> Action {
         if s.level(*st) < *lvl {
             let a = Build { station: *st };
             let cost = all_alone_core::content::stations::def(*st).levels[usize::from(s.level(*st)) + 1].cost;
-            let critical = *st == Station::Workbench && (*lvl <= 2 || !have_part(s, "spark_coil"));
+            let radio_needed = *st == Station::Radio && *lvl <= 2 && !s.places["garage"].known;
+            let critical = radio_needed || (*st == Station::Workbench && (*lvl <= 2 || !have_part(s, "spark_coil")));
             if ok(s, &a) && (critical || !spends_reserve(s, cost)) {
                 return a;
             }
@@ -607,9 +616,20 @@ fn reserved(s: &GameState, id: &str) -> u32 {
     let wb = s.level(Station::Workbench);
     if wb < 3 && !have_part(s, "spark_coil") {
         r += match id {
-            "scrap" => 4,
-            "parts" => 3,
-            "nails" => 4,
+            "scrap" => 6,
+            "parts" => 4,
+            "nails" => 6,
+            "plank" => 2,
+            _ => 0,
+        };
+    }
+    let bag = ["satchel", "rucksack", "frame_pack"]
+        .iter()
+        .any(|b| inv_count(&s.store, b) + inv_count(&s.pack, b) > 0);
+    if !bag && !have_part(s, "fuel_drum") {
+        r += match id {
+            "cloth" => 4,
+            "rope" => 1,
             _ => 0,
         };
     }
@@ -631,14 +651,19 @@ fn reserved(s: &GameState, id: &str) -> u32 {
     }
     if !have_part(s, "spark_coil") {
         r += match id {
-            "wire" => 4,
-            "battery" => 2,
-            "parts" => 1,
+            "wire" => 5,
+            "battery" => 3,
+            "parts" => 2,
             _ => 0,
         };
     }
-    if !s.ferry.contains("hull_patch") && id == "nails" {
-        r += 4;
+    if !s.ferry.contains("hull_patch") {
+        r += match id {
+            "nails" => 4,
+            "pitch" => 2,
+            "plank" => 2,
+            _ => 0,
+        };
     }
     r
 }
@@ -713,7 +738,11 @@ fn site(s: &GameState) -> Action {
         }
         // Make room for a ferry part.
         if let Some(rs) = rs {
-            let part = rs.pile.keys().find(|id| partish(id)).cloned();
+            let part = rs
+                .pile
+                .keys()
+                .find(|id| partish(id) && items::get(id).is_some_and(|d| d.weight <= inventory::capacity(s)))
+                .cloned();
             if let Some(part) = part {
                 let a = Take {
                     item: part.clone(),

@@ -84,6 +84,15 @@ pub static RECIPES: &[RecipeDef] = &[
         ..R
     },
     RecipeDef {
+        id: "strip_wire",
+        name: "Strip wire from old fittings",
+        icon: "metal",
+        inputs: &[("parts", 1)],
+        outputs: &[("wire", 2)],
+        minutes: 40,
+        ..R
+    },
+    RecipeDef {
         id: "tin_rattle",
         name: "Make a tin rattle",
         icon: "noise",
@@ -225,7 +234,7 @@ pub static RECIPES: &[RecipeDef] = &[
         icon: "part",
         inputs: &[("belting", 1)],
         outputs: &[("drive_belt", 1)],
-        station: Some((Station::Workbench, 1)),
+        station: Some((Station::Workbench, 2)),
         minutes: 90,
         ..R
     },
@@ -233,7 +242,7 @@ pub static RECIPES: &[RecipeDef] = &[
         id: "rewind_coil",
         name: "Rewind the spark coil",
         icon: "part",
-        inputs: &[("coil_cracked", 1), ("wire", 4), ("battery", 2), ("parts", 1)],
+        inputs: &[("coil_cracked", 1), ("wire", 5), ("battery", 3), ("parts", 2)],
         outputs: &[("spark_coil", 1)],
         station: Some((Station::Workbench, 3)),
         minutes: 240,

@@ -456,7 +456,10 @@ pub fn listen(s: &mut GameState, j: &mut Journal) {
         return;
     }
     s.radio_day = s.day();
-    match next_fragment(s) {
+    // Reception comes and goes; a better set catches more.
+    let clear = [0, 55, 70, 85][usize::from(s.level(Station::Radio).min(3))];
+    let heard = if s.rng.chance(clear) { next_fragment(s) } else { None };
+    match heard {
         Some(id) => {
             crate::systems::codex::find(s, j, id);
             if let Some(c) = codex::get(id) {
@@ -524,7 +527,7 @@ pub fn can_install(s: &GameState, part: &str) -> Result<(), String> {
 /// What fitting a part uses up besides the part.
 pub fn part_cost(part: &str) -> &'static [(&'static str, u32)] {
     match part {
-        "hull_patch" => &[("nails", 4)],
+        "hull_patch" => &[("nails", 4), ("pitch", 2), ("plank", 2)],
         _ => &[],
     }
 }
@@ -568,8 +571,8 @@ pub fn install(s: &mut GameState, j: &mut Journal, part: &str) {
 }
 
 /// Food and water for two days on the river, taken aboard when you cast off.
-pub const VOYAGE_MEALS: u32 = 6;
-pub const VOYAGE_WATER: u32 = 4;
+pub const VOYAGE_MEALS: u32 = 8;
+pub const VOYAGE_WATER: u32 = 5;
 
 pub fn can_cast_off(s: &GameState) -> Result<(), String> {
     if s.frozen {
