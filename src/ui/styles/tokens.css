@@ -53,3 +53,11 @@
   --fade: 240ms;
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* After dark the whole interface dims: bone goes to ash, lines recede. */
+:root.is-dark {
+  --c-line: #aaa69b;
+  --c-dim: #64625b;
+  --c-faint: #2c2c2a;
+  --c-panel: #0e1011;
+}

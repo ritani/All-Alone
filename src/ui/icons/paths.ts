@@ -2,11 +2,20 @@
  * The ALL ALONE icon set. Drawn on a 24 x 24 grid, stroke only.
  * Each icon is a single SVG path; render it with <Icon name="..." />.
  * Rules: straight lines and true arcs, square caps, mitre joins, no fills.
+ *
+ * The core names icons by string key (items, places, weather, skills,
+ * backgrounds, mark sigils). Every key it can emit must exist here; the
+ * icon coverage test walks the core to check. Unknown keys draw `item`.
  */
 
 /** Full circle as path data (two half arcs). */
 function ring(cx: number, cy: number, r: number): string {
   return `M${cx - r} ${cy}A${r} ${r} 0 1 0 ${cx + r} ${cy}A${r} ${r} 0 1 0 ${cx - r} ${cy}Z`;
+}
+
+/** A cloud drawn from arcs, its base at y = b. */
+function cloud(b: number): string {
+  return `M5 ${b}H19A4 4 0 0 0 18 ${b - 7.9}A6 6 0 0 0 6.6 ${b - 7}A3.5 3.5 0 0 0 5 ${b}Z`;
 }
 
 export const ICON_PATHS = {
@@ -27,6 +36,19 @@ export const ICON_PATHS = {
   store: 'M4 3V21M20 3V21M4 9H20M4 15H20M7 9V6H10V9M13 15V12H17V15M7 21V18H11V21',
   ferry: 'M2 15H22L19 19.5H5ZM7 15V10H14V15M16 15V7H18V15M2 22H6M9 22H15M18 22H22',
 
+  // Places on the map
+  place_weir: 'M2 7H8V11H13V15H22M2 20H22M4 15H9M15 11H20M17 18H21',
+  place_house: 'M2 21V12L7 8L12 12V21M12 21V12L17 8L22 12V21M2 21H22M6 21V16H8V21M16 21V16H18V21',
+  place_chapel: 'M5 21V11L12 5L19 11V21ZM12 5V1M10 2.5H14M10 21V16H14V21M11 11H13V13H11Z',
+  place_mill: 'M2 21V11L7 14V11L12 14V11L17 14V4H20V21ZM2 21H22M5 18H7M10 18H12M14 18H16',
+  place_school: 'M3 21V10H21V21ZM3 10L12 4L21 10M12 4V1H15V2.5H12M10 21V15H14V21M5.5 13H8M16 13H18.5',
+  place_surgery: 'M4 21V7H20V21ZM12 10V16M9 13H15M10 21V18.5H14V21M4 7L6 4H18L20 7',
+  place_boatyard: 'M3 9H21L18 14H6ZM7 14V20M17 14V20M2 20H22M12 9V3M12 3L16 7H12',
+  place_garage: 'M3 21V9L12 4L21 9V21M6 21V12H18V21M6 15H18M6 18H18',
+  place_station: 'M2 9L12 4L22 9M5 9V15M19 9V15M2 15H22M3 20H21M6 18V22M12 18V22M18 18V22',
+  place_wharf: 'M5 21V4H8V21M8 4L20 8M8 9L13 5.7M18 7.3V13M16 13H20V16H16ZM2 21H22',
+  place_farm: 'M3 21V10L7 5H17L21 10V21ZM3 10H21M9 21V14H15V21M9 14L15 21M15 14L9 21',
+
   // Vitals and state
   health: 'M2 12H7L9 7L12 18L15 4L17 12H22',
   food: 'M7 3V21M5 3V8H9V3M16 21V3L19 9V13H16',
@@ -40,11 +62,87 @@ export const ICON_PATHS = {
   light: 'M9 4H15L16 6H8ZM8 6V17H16V6M7 17H17V20H7ZM12 9L13.5 11.5L12 14L10.5 11.5ZM10 4V2H14V4',
   stilled: `${ring(12, 4.5, 2)}M12 6.5V15M12 8L9.5 14M12 8L14.5 14M12 15L10 21M12 15L14 21`,
 
+  // Weather
+  weather_clear: `${ring(12, 12, 4)}M12 2V5M12 19V22M2 12H5M19 12H22M4.9 4.9L7 7M17 17L19.1 19.1M4.9 19.1L7 17M17 7L19.1 4.9`,
+  weather_overcast: `${cloud(18)}M2 21H22`,
+  weather_rain: `${cloud(14)}M8 17L7 21M12 17L11 21M16 17L15 21`,
+  weather_fog: 'M3 6H17M6 10H21M3 14H15M8 18H21M3 22H13',
+  weather_frost: 'M12 2V22M3.3 7L20.7 17M3.3 17L20.7 7M10 4L12 6L14 4M10 20L12 18L14 20',
+  weather_snow: `${cloud(13)}M8 16V20M6 18H10M14 17V21M12 19H16`,
+
+  // Items
+  item: 'M4 8H20V20H4ZM4 8L7 4H17L20 8M10 12H14',
+  tin: 'M6 5H18V20H6ZM6 8H18M6 17H18M9 11.5H15',
+  crop: 'M12 21L7 13.5A5 5 0 0 1 17 13.5ZM12 8.5V3M12 6L9 3.5M12 6L15 3.5M10 15L12 16',
+  fish: 'M2 12L7 7.5H14L18.5 12L14 16.5H7ZM18.5 12L22 8.5V15.5ZM6 11.5H7M10 9.5L11.5 12L10 14.5',
+  meat: `M3 10L8 5H16L21 10V14L16 19H8L3 14Z${ring(9, 12, 2)}M13 9L17 13M14 15L16 17`,
+  pot: 'M3 10H21M5 10V19H19V10M9 10V7H15V10M1.5 12H5M19 12H22.5',
+  bottle: 'M10 2.5H14V7L16.5 10V21H7.5V10L10 7ZM7.5 14H16.5',
+  bandage: 'M4 15L15 4L20 9L9 20ZM8 11L13 16M11 8L16 13M10.5 12.5H11.5M12.5 10.5H13.5',
+  pills: `${ring(8.5, 15.5, 4.5)}M5.3 18.7L11.7 12.3${ring(17, 7, 3)}M15 9L19 5`,
+  herb: 'M12 22V6M12 10L8 6M12 10L16 6M12 15L7 11M12 15L17 11M12 19L9 16.5M12 19L15 16.5M12 6L12 3',
+  plank: 'M3 7H21V11H3ZM3 14H21V18H3ZM7 9H8.5M15 16H16.5',
+  metal: `M3 18L8 7H21L16 18Z${ring(12.5, 12.5, 2)}`,
+  cloth: 'M4 6H20V10H4ZM4 10L2 18H18L20 10M7 14H15',
+  fuel: 'M5 6H19V21H5ZM12 6V3H16V6M8 11L16 17M16 11L8 17',
+  blade: 'M7 15L21 3L9 17M5.5 13.5L10.5 18.5M8 16L3 21',
+  club: 'M3 21L11 13M10 10L16 4L20 8L14 14H11L10 13ZM14 7L15 8M17 9L18 10',
+  gun: 'M3 7H21V11H11L10 18H5L7 11H3ZM11 11L12.5 14H14.5M17 7V5',
+  rounds: 'M5 21V11L7 8L9 11V21ZM10 21V11L12 8L14 11V21ZM15 21V11L17 8L19 11V21ZM5 14H9M10 14H14M15 14H19',
+  tool: 'M5 4H15V9H5ZM10 9V21M15 6.5H19L21 4M8 21H12',
+  trap: `M4 21V4M4 8H14${ring(14, 13, 5)}M2 21H8`,
+  coat: 'M8 3H16L21 7L19 12L17 11V21H7V11L5 12L3 7ZM12 7V21M8 3L12 7L16 3',
+  key: `${ring(7, 12, 4)}M11 12H21M17 12V15M20 12V15`,
+  part: `M12 2L20.7 7V17L12 22L3.3 17V7Z${ring(12, 12, 4)}`,
+  photo: 'M3 5H21V19H3ZM6 8H18V16H6ZM6 16L10 12L13 15L15 13L18 16',
+
+  // Skills
+  skill_quiet: 'M5 3H9V11H5ZM5 14H9V17H5ZM15 7H19V15H15ZM15 18H19V21H15Z',
+  skill_aim: `${ring(12, 12, 7)}M12 2V8M12 16V22M2 12H8M16 12H22`,
+  skill_forage: 'M3 10H21L19 21H5ZM7 10L12 3L17 10M4 14H20M5 18H19',
+
+  // Backgrounds
+  bg_clerk: 'M3 4H14V21H3ZM6 8H11M6 11H11M6 14H11M17 19L21 4M17 19V22',
+  bg_nurse: 'M3 14L5 6H19L21 14ZM12 7.5V12.5M9.5 10H14.5M3 18H21',
+  bg_poacher: 'M8 21V14L10 11L9 3L12 9L15 3L14 11L16 14V21ZM10.5 16H11M13 16H13.5',
+  bg_machinist: 'M4 20L13 11M13 11L12 7L15 4H18L16 7L17 8L20 6V9L17 12Z',
+  bg_warden: 'M3 9H9V15H3ZM9 10L21 5M9 14L21 19M5 15V20M5 9V6',
+
+  // Mark sigils
+  sigil_moon: `${ring(12, 10, 6)}M3 20H21M6 17H18`,
+  sigil_ice: 'M2 12H22M5 12L9 16L8 20M14 12L16 15L20 16M10 12L12 8L11 4',
+  sigil_ferry: 'M4 11H20L17 15H7ZM12 11V5M3 19H8M10 19H14M16 19H21',
+  sigil_quiet: `${ring(12, 12, 8)}M8 12H16`,
+  sigil_dog: 'M6 4L9 8H15L18 4L19 11L16 18H8L5 11ZM10 12H10.5M13.5 12H14M11 15H13',
+  sigil_fall: 'M12 3V19M6 13L12 19L18 13M4 22H20',
+  sigil_blade: 'M12 2L14 6V15H10V6ZM7 15H17M12 15V22',
+  sigil_eye: `M2 12L7 7H17L22 12L17 17H7Z${ring(12, 12, 3)}`,
+  sigil_map: 'M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5Z',
+  sigil_house: 'M4 4H20V20H4ZM8 20V12L12 8L16 12V20',
+  sigil_hand: 'M7 21V9M10 21V4M13 21V3M16 21V5M19 21V9M7 14L3 10M7 21H19',
+  sigil_scale: 'M12 3V21M8 21H16M4 7H20M4 7L1.5 13H6.5ZM20 7L17.5 13H22.5Z',
+  sigil_hook: 'M14 3V15A4 4 0 0 1 6 15V12L8 14M12 3H16',
+  sigil_river: 'M2 8L6 6L10 8L14 6L18 8L22 6M2 13L6 11L10 13L14 11L18 13L22 11M2 18L6 16L10 18L14 16L18 18L22 16',
+
   // Interface
   back: 'M15 5L8 12L15 19',
+  forward: 'M9 5L16 12L9 19',
   close: 'M5 5L19 19M19 5L5 19',
+  plus: 'M12 5V19M5 12H19',
+  minus: 'M5 12H19',
+  check: 'M4 12L9 17L20 6',
+  down: 'M5 9L12 16L19 9',
 } as const satisfies Record<string, string>;
 
 export type IconName = keyof typeof ICON_PATHS;
 
 export const ICON_NAMES = Object.keys(ICON_PATHS) as IconName[];
+
+export function isIconName(name: string): name is IconName {
+  return Object.prototype.hasOwnProperty.call(ICON_PATHS, name);
+}
+
+/** The path for any key the core may send; unknown keys draw the generic item. */
+export function iconPath(name: string): string {
+  return isIconName(name) ? ICON_PATHS[name] : ICON_PATHS.item;
+}

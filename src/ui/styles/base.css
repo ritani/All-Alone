@@ -135,3 +135,8 @@ a {
     scroll-behavior: auto !important;
   }
 }
+
+/* Colour changes (night falling) fade slowly. */
+body {
+  transition: color var(--fade-slow) var(--ease), background-color var(--fade-slow) var(--ease);
+}

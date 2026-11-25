@@ -1,5 +1,12 @@
+export { ActionButton, ActionList, Chips } from './ActionButton';
 export { Button } from './Button';
+export { Hairline } from './Hairline';
 export { Icon } from './Icon';
 export { Meter } from './Meter';
 export { Panel } from './Panel';
+export { Row } from './Row';
 export { Rule } from './Rule';
+export { Sheet } from './Sheet';
+export { Stepper } from './Stepper';
+export { TabBar, type Tab } from './TabBar';
+export { Toasts } from './Toasts';

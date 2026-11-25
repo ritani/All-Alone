@@ -148,3 +148,464 @@
   color: var(--c-dim);
   font-size: var(--fs-small);
 }
+
+/* ------------------------------------------------------------------ Loading */
+.loading {
+  align-items: center;
+  justify-content: center;
+  color: var(--c-dim);
+}
+
+/* ------------------------------------------------------------------ Title additions */
+.title__run {
+  margin-top: calc(-1 * var(--sp-1));
+  font-size: var(--fs-small);
+  color: var(--c-dim);
+  text-align: center;
+}
+
+.title__links {
+  margin-top: var(--sp-3);
+  border-top: var(--lw-hair) solid var(--c-faint);
+}
+
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: var(--lw-hair) solid var(--c-faint);
+  border-left-color: var(--c-danger);
+  font-size: var(--fs-small);
+}
+
+.notice p {
+  flex: 1;
+}
+
+.notice__close {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin: calc(-1 * var(--sp-2)) calc(-1 * var(--sp-2)) 0 0;
+  color: var(--c-dim);
+}
+
+/* ------------------------------------------------------------------ Page */
+.page {
+  gap: var(--sp-5);
+}
+
+.page__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  align-self: flex-start;
+  min-height: var(--touch);
+  margin-left: calc(-1 * var(--sp-2));
+  padding: 0 var(--sp-3) 0 var(--sp-1);
+  color: var(--c-dim);
+}
+
+.page__back:hover {
+  color: var(--c-line);
+}
+
+.page__kicker {
+  color: var(--c-dim);
+}
+
+.page__title {
+  font-family: var(--font-prose);
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: var(--lh-tight);
+  letter-spacing: 0.01em;
+}
+
+.page__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: auto;
+  padding-top: var(--sp-4);
+}
+
+.guide > * + * {
+  margin-top: var(--sp-3);
+}
+
+.fatal__detail {
+  font-size: var(--fs-small);
+  color: var(--c-dim);
+  overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------ Setup choices */
+.choice-set {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.choice-set > legend {
+  width: 100%;
+  padding: 0;
+  margin-bottom: var(--sp-3);
+}
+
+.choice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
+  border: var(--lw-hair) solid var(--c-faint);
+  cursor: pointer;
+  transition: border-color var(--fade) var(--ease), background-color var(--fade) var(--ease);
+}
+
+.choice + .choice {
+  margin-top: -1px;
+}
+
+.choice::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  bottom: -1px;
+  width: 3px;
+  background: transparent;
+}
+
+.choice:has(input:checked) {
+  position: relative;
+  z-index: 1;
+  border-color: var(--c-line);
+  background: var(--c-panel);
+}
+
+.choice:has(input:checked)::before {
+  background: var(--c-line);
+}
+
+.choice:has(input:focus-visible) {
+  outline: var(--lw-focus) solid var(--c-line);
+  outline-offset: 3px;
+}
+
+.choice--locked {
+  cursor: not-allowed;
+  color: var(--c-dim);
+}
+
+.choice__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 1.75rem;
+}
+
+.choice__icon {
+  color: var(--c-dim);
+}
+
+.choice:has(input:checked) .choice__icon {
+  color: var(--c-line);
+}
+
+.choice__name {
+  flex: 1;
+  font-size: var(--fs-body);
+}
+
+.choice__aside {
+  color: var(--c-dim);
+  font-size: var(--fs-label);
+}
+
+.choice__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.choice__text {
+  font-size: var(--fs-body);
+}
+
+.choice--locked .choice__text {
+  color: var(--c-dim);
+}
+
+.choice__line {
+  font-size: var(--fs-small);
+}
+
+.choice__line--dim {
+  color: var(--c-dim);
+}
+
+.choice--small {
+  padding-top: var(--sp-2);
+  padding-bottom: var(--sp-2);
+  justify-content: center;
+  min-height: var(--touch);
+}
+
+.setup .choice-set + .choice-set {
+  margin-top: var(--sp-3);
+}
+
+.setup__go {
+  padding-top: var(--sp-2);
+}
+
+.daily {
+  margin-top: var(--sp-5);
+  padding-bottom: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.daily__title {
+  font-size: var(--fs-body);
+  font-weight: 400;
+}
+
+.daily__done,
+.daily__streak {
+  color: var(--c-dim);
+  font-size: var(--fs-small);
+}
+
+/* ------------------------------------------------------------------ Intro */
+.intro {
+  justify-content: center;
+  gap: var(--sp-7);
+}
+
+.intro__prose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  font-size: 1.125rem;
+}
+
+.intro__line {
+  animation: fade-in 1400ms var(--ease) both;
+}
+
+.intro__line--1 { animation-delay: 900ms; }
+.intro__line--2 { animation-delay: 1800ms; }
+.intro__line--3 { animation-delay: 2700ms; }
+.intro__line--4 { animation-delay: 3600ms; }
+.intro__line--5 { animation-delay: 4500ms; }
+.intro__line--6 { animation-delay: 5400ms; }
+.intro__line--7 { animation-delay: 6300ms; }
+.intro__line--8 { animation-delay: 4000ms; }
+
+.intro__foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.intro__who {
+  color: var(--c-dim);
+}
+
+.intro__note {
+  font-size: var(--fs-small);
+  color: var(--c-dim);
+}
+
+/* ------------------------------------------------------------------ Marks */
+.marks {
+  display: flex;
+  flex-direction: column;
+  border-top: var(--lw-hair) solid var(--c-faint);
+}
+
+.mark {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  padding: var(--sp-3) 0;
+  border-bottom: var(--lw-hair) solid var(--c-faint);
+  color: var(--c-faint);
+}
+
+.mark__sigil {
+  flex: none;
+}
+
+.mark--earned {
+  color: var(--c-line);
+}
+
+.mark__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.mark__name {
+  color: var(--c-dim);
+}
+
+.mark--earned .mark__name {
+  color: var(--c-line);
+}
+
+.mark__text {
+  font-family: var(--font-prose);
+  font-size: var(--fs-small);
+  color: var(--c-dim);
+}
+
+/* ------------------------------------------------------------------ Ledger, unlocks */
+.best {
+  border-top: var(--lw-hair) solid var(--c-faint);
+}
+
+.best__item {
+  border-bottom: var(--lw-hair) solid var(--c-faint);
+}
+
+.best__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: 3.25rem;
+  padding: var(--sp-2) 0;
+  text-align: left;
+}
+
+.best__row:hover {
+  background: var(--c-panel);
+}
+
+.best__rank {
+  width: 2ch;
+  color: var(--c-dim);
+  text-align: right;
+}
+
+.best__what {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.best__meta {
+  color: var(--c-dim);
+  font-size: 0.625rem;
+}
+
+.best__score {
+  font-size: var(--fs-body);
+}
+
+.best__detail {
+  padding: 0 0 var(--sp-4) calc(2ch + var(--sp-3));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.rows {
+  border-top: var(--lw-hair) solid var(--c-faint);
+}
+
+.unlock {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: var(--lw-hair) solid var(--c-faint);
+  color: var(--c-dim);
+}
+
+.unlock--open {
+  color: var(--c-line);
+}
+
+.unlock__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.unlock__text {
+  font-size: var(--fs-small);
+  color: var(--c-dim);
+}
+
+.unlock__state {
+  color: var(--c-dim);
+}
+
+/* ------------------------------------------------------------------ Ended */
+.ended__cause {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.ended__why {
+  color: var(--c-dim);
+}
+
+.ended--death .ended__why {
+  color: var(--c-danger);
+}
+
+.ended__text {
+  font-size: 1.125rem;
+}
+
+.ended .page__title {
+  font-size: 2.25rem;
+}
+
+.kit__journal .journal {
+  height: auto;
+  padding: 0;
+}
+
+/* In the kit the toast sits in the flow instead of over the page. */
+.kit__toast .toasts {
+  position: static;
+  transform: none;
+  padding: 0;
+}
+
+@media (max-width: 22.5rem) {
+  .wordmark:not(.wordmark--small):not(.wordmark--tiny) {
+    font-size: 1.75rem;
+    letter-spacing: 0.34em;
+    margin-right: -0.34em;
+  }
+}

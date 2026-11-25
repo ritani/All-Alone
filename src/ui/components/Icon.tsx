@@ -1,11 +1,12 @@
-import { ICON_PATHS, type IconName } from '../icons/paths';
+import { iconPath, type IconName } from '../icons/paths';
 
 export interface IconProps {
-  name: IconName;
+  /** An icon key; keys from the core are plain strings and fall back to `item`. */
+  name: IconName | (string & {});
   /** Accessible name. Omit for decorative icons next to visible text. */
   label?: string;
   /** Rendered size in CSS pixels (the grid is always 24). */
-  size?: 16 | 20 | 24 | 32 | 48;
+  size?: 16 | 20 | 24 | 32 | 48 | 64;
   class?: string;
 }
 
@@ -28,7 +29,7 @@ export function Icon({ name, label, size = 24, class: extra }: IconProps) {
       aria-hidden={label ? undefined : 'true'}
       focusable="false"
     >
-      <path d={ICON_PATHS[name]} />
+      <path d={iconPath(name)} />
     </svg>
   );
 }

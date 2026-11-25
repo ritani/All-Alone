@@ -7,9 +7,12 @@ repair the ferry before the river freezes.
 Text and line art, built for phones first. Web now; iOS and Android later via
 Capacitor from the same build.
 
-**Status:** milestone M2 (core simulation). The whole game runs headless in
-the Rust core (`crates/core`, compiled to WebAssembly); the screens that play
-it arrive in M3 and M4. The browser still shows the M1 title screen.
+**Status:** milestone M3 (lock house UI). The whole game runs in the Rust
+core (`crates/core`, compiled to WebAssembly) and is playable end to end in
+the browser: new run setup, the daily river, the lock house, choice events,
+night, dawn, death and the ledger, marks and remnants. Expedition phases
+(packing, travel, rooms, encounters, barter) use a plain fallback screen until
+M4 designs them.
 
 The design, look, technology, security rules and milestones are in
 [docs/PLAN.md](docs/PLAN.md). Read it before changing anything.
@@ -74,6 +77,6 @@ handler attributes or remote resources. Check CSP behaviour with
 ```
 crates/core/   the game core in Rust: content/, systems/, state, actions, saves, marks, wasm bridge
 src/core/      typed TS wrapper over the wasm core, generated types.ts, generated pkg/ (ignored)
-src/platform/  storage, haptics, lifecycle adapters
-src/ui/        components, screens, icons, styles
+src/platform/  storage (async key-value; web = localStorage) and haptics adapters
+src/ui/        state/ (the app store: run, view, profile, autosave), components, screens, icons, styles
 ```

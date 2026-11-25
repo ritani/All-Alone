@@ -1,4 +1,13 @@
+import { useState } from 'preact/hooks';
+import type { ActionView, Entry } from '../../core';
+import { ActionList } from '../components/ActionButton';
 import { Button } from '../components/Button';
+import { Hairline } from '../components/Hairline';
+import { Sheet } from '../components/Sheet';
+import { Stepper } from '../components/Stepper';
+import { TabBar } from '../components/TabBar';
+import { Toasts } from '../components/Toasts';
+import { Journal } from './game/Journal';
 import { Icon } from '../components/Icon';
 import { LockHouseArt } from '../components/LockHouseArt';
 import { Meter } from '../components/Meter';
@@ -12,7 +21,41 @@ import { ICON_NAMES } from '../icons/paths';
  */
 const SWATCHES = ['field', 'panel', 'line', 'dim', 'faint', 'danger'] as const;
 
+function act(p: Partial<ActionView> & { label: string }): ActionView {
+  return {
+    action: { type: 'rest' },
+    group: 'house',
+    icon: 'rest',
+    minutes: 0,
+    noise: 0,
+    odds: null,
+    enabled: true,
+    reason: null,
+    danger: false,
+    max_qty: 1,
+    ...p,
+  };
+}
+
+const SAMPLE_ACTIONS: ActionView[] = [
+  act({ label: 'Draw water from the lock', icon: 'water', minutes: 15, noise: 1 }),
+  act({ label: 'Search carefully', icon: 'pack', minutes: 60, odds: 80 }),
+  act({ label: 'Force the door', icon: 'lock', minutes: 5, noise: 12, danger: true }),
+  act({ label: 'Pack ship\u2019s biscuit', icon: 'food', action: { type: 'pack', item: 'biscuits', qty: 1 }, max_qty: 7 }),
+  act({ label: 'Build: iron stove', icon: 'stove', enabled: false, reason: 'Needs scrap metal 0/3 and machine parts 0/1.' }),
+];
+
+const SAMPLE_JOURNAL: Entry[] = [
+  { day: 3, time: '06:00', text: 'Day 3. The sky is low and grey.', tone: 'quiet' },
+  { day: 3, time: '06:17', text: 'You haul in the night line. A fish.', tone: 'find' },
+  { day: 3, time: '06:32', text: 'You fill 2 measures from the lock. Brown water. Boil it.', tone: 'plain' },
+  { day: 3, time: '06:32', text: 'Something moves on the roof.', tone: 'danger' },
+];
+
 export function Kit() {
+  const [qty, setQty] = useState(2);
+  const [tab, setTab] = useState<'house' | 'store' | 'craft' | 'map' | 'notes'>('house');
+  const [sheet, setSheet] = useState(false);
   return (
     <main class="frame kit">
       <header class="kit__head">
@@ -80,6 +123,65 @@ export function Kit() {
           <Meter label="Nerve" icon="nerve" value={18} />
           <Meter label="Warmth" icon="warmth" value={0} />
         </Panel>
+      </section>
+
+      <section class="kit__section">
+        <Rule>Actions</Rule>
+        <ActionList actions={SAMPLE_ACTIONS} onAct={() => undefined} />
+      </section>
+
+      <section class="kit__section">
+        <Rule>Stepper and hairlines</Rule>
+        <Stepper value={qty} min={1} max={7} onChange={setQty} label="How many" />
+        <Hairline value={2} max={3} steps label="Station level" />
+        <Hairline value={61} max={100} label="Rest" />
+        <Hairline value={9} max={100} label="Warmth" danger />
+      </section>
+
+      <section class="kit__section">
+        <Rule>Journal</Rule>
+        <div class="kit__journal">
+          <Journal entries={SAMPLE_JOURNAL} fresh={2} seq={1} />
+        </div>
+      </section>
+
+      <section class="kit__section">
+        <Rule>Toast</Rule>
+        <div class="kit__toast">
+          <Toasts
+            toasts={[{ id: 1, title: 'Mark. First night', text: 'Survive a night at the lock house.', icon: 'sigil_moon', tone: 'quiet' }]}
+            onDismiss={() => undefined}
+          />
+        </div>
+      </section>
+
+      <section class="kit__section">
+        <Rule>Sheet</Rule>
+        <Button block variant="quiet" onClick={() => setSheet(true)}>
+          Open a sheet
+        </Button>
+        {sheet && (
+          <Sheet title="Day 3, 06:32" onClose={() => setSheet(false)}>
+            <p class="prose">The lock house.</p>
+          </Sheet>
+        )}
+      </section>
+
+      <section class="kit__section">
+        <Rule>Tab bar</Rule>
+        <TabBar
+          idBase="kit"
+          label="Kit tabs"
+          current={tab}
+          onChange={setTab}
+          tabs={[
+            { id: 'house', label: 'House', icon: 'house', flag: true },
+            { id: 'store', label: 'Store', icon: 'store' },
+            { id: 'craft', label: 'Craft', icon: 'workbench' },
+            { id: 'map', label: 'Map', icon: 'map' },
+            { id: 'notes', label: 'Notes', icon: 'journal' },
+          ]}
+        />
       </section>
 
       <section class="kit__section">
