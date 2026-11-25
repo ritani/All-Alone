@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'preact/hooks';
-import { dailySetup, type Difficulty, type ProfileView } from '../../core';
+import { dailySetup, type DailyStatus, type Difficulty, type ProfileView, type View } from '../../core';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { Page } from '../components/Page';
@@ -11,6 +11,10 @@ import { titleCase } from '../format';
 export interface SetupProps {
   profile: ProfileView;
   hasRun: boolean;
+  /** The run in progress, for the confirmation. */
+  run?: View | null;
+  /** Whether today's daily river has been attempted (from the core). */
+  daily?: DailyStatus | null;
   onBack: () => void;
   onStart: (opts: { difficulty: Difficulty; background: string; keepsake: string | null }) => void;
   onDaily: () => void;
@@ -27,7 +31,7 @@ const SKILL_NAMES: Record<string, string> = {
 };
 
 /** New run: background, keepsake, difficulty; or the daily river. */
-export function Setup({ profile, hasRun, onBack, onStart, onDaily, onUnlocks }: SetupProps) {
+export function Setup({ profile, hasRun, run = null, daily: dailyStatus = null, onBack, onStart, onDaily, onUnlocks }: SetupProps) {
   const firstOpen = profile.backgrounds.find((b) => b.unlocked)?.id ?? 'clerk';
   const [background, setBackground] = useState(firstOpen);
   const [keepsake, setKeepsake] = useState<string | null>(null);
@@ -44,7 +48,8 @@ export function Setup({ profile, hasRun, onBack, onStart, onDaily, onUnlocks }: 
   }, [today]);
   const dailyBg = daily ? profile.backgrounds.find((b) => b.id === daily.background) : undefined;
   const dailyDiff = daily ? profile.difficulties.find((d) => d.id === daily.difficulty) : undefined;
-  const dailyDone = profile.daily_results.find((r) => r.date === today);
+  const dailyDone = dailyStatus?.result ?? profile.daily_results.find((r) => r.date === today);
+  const dailyTried = dailyStatus?.attempted ?? dailyDone !== undefined;
 
   const go = (what: 'run' | 'daily') => {
     if (hasRun && confirm === null) {
@@ -182,10 +187,12 @@ export function Setup({ profile, hasRun, onBack, onStart, onDaily, onUnlocks }: 
             One river for everyone today. {dailyBg?.name ?? titleCase(daily.background)},{' '}
             {(dailyDiff?.name ?? daily.difficulty).toLowerCase()}. The first attempt is the one that counts.
           </p>
-          {dailyDone && (
+          {dailyDone ? (
             <p class="daily__done num">
               Counted: {dailyDone.days} days, score {dailyDone.score}.
             </p>
+          ) : (
+            dailyTried && <p class="daily__done">Already begun today. Another attempt will not count.</p>
           )}
           <p class="daily__streak label">
             Streak {profile.daily_streak}. Best {profile.daily_best_streak}.
@@ -198,10 +205,13 @@ export function Setup({ profile, hasRun, onBack, onStart, onDaily, onUnlocks }: 
 
       {confirm && (
         <Sheet title="A run is in progress" onClose={() => setConfirm(null)}>
-          <p class="prose">Beginning again leaves the lock house as it is. That run ends here, unrecorded.</p>
+          <p class="prose">
+            {run ? `Day ${run.day}, ${run.clock}. ${run.run.background_name}, ${run.run.difficulty_name.toLowerCase()}. ` : ''}
+            Beginning again gives that run up. It ends here, as given up, and its ledger is kept in your record.
+          </p>
           <div class="sheet__actions">
             <Button block variant="danger" onClick={() => go(confirm)}>
-              End it and begin
+              Give it up and begin
             </Button>
             <Button block variant="quiet" onClick={() => setConfirm(null)}>
               Keep it

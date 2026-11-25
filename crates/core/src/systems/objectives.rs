@@ -9,7 +9,7 @@ use ts_rs::TS;
 use crate::content::items::{self, FERRY_PARTS, ItemKind};
 use crate::content::{Slot, Station, VitalKind, places, stations};
 use crate::state::{DogState, GameState, inv_count};
-use crate::systems::{barter, food, inventory};
+use crate::systems::{barter, food, inventory, journal};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ts", derive(TS))]
@@ -30,7 +30,8 @@ fn o(id: &str, text: impl Into<String>, urgent: bool, icon: &str) -> Objective {
     }
 }
 
-fn where_part(s: &GameState, part: &str) -> String {
+/// Where the next step for a ferry part lies, in one line.
+pub fn where_part(s: &GameState, part: &str) -> String {
     let (source, work) = match part {
         "spark_coil" => ("coil_cracked", "Rewind the cracked coil at the workbench."),
         "drive_belt" => ("belting", "Cut the belting down at the workbench."),
@@ -156,7 +157,7 @@ pub fn list(s: &GameState) -> Vec<Objective> {
         let left = s.freeze_day.saturating_sub(s.day());
         v.push(o(
             "freeze",
-            format!("The river closes in about {left} days."),
+            format!("The river closes in about {}.", journal::count(left, "day", "days")),
             left <= 5,
             "sigil_ice",
         ));

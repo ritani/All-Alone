@@ -34,7 +34,7 @@ fn generate() -> String {
         RoomSummary, RoomView, SiteView, EncounterView, OptionView, EventView, TravelView, PackingView, OfferView,
         SellView, BarterView, EndingView, RunInfo,
         Ledger, ScoreLine, Totals, DailyResult, DailyRecord, Profile, RunEndReport, Unlock, DailySetup,
-        MarkView, BackgroundView, KeepsakeView, DifficultyView, ProfileView,
+        MarkView, BackgroundView, KeepsakeView, DifficultyView, ProfileView, DailyStatus, MarkEarned, NeedView,
     );
     for d in all {
         out.push_str(&d);

@@ -58,6 +58,13 @@ impl Game {
         Ok(to_json(&out))
     }
 
+    /// Give the run up: it ends with the cause "Gave up" and a ledger.
+    /// Returns the `Outcome` (JSON). Errors if the run is already over.
+    pub fn forfeit(&mut self) -> Result<String, JsError> {
+        let out = crate::forfeit(&mut self.state).map_err(js)?;
+        Ok(to_json(&out))
+    }
+
     /// The whole `View` (JSON).
     pub fn view(&self) -> String {
         to_json(&crate::view(&self.state))
@@ -141,6 +148,14 @@ pub fn profile_daily(profile: &str, date: &str) -> Result<String, JsError> {
     Ok(to_json(
         &serde_json::json!({ "profile": save::profile_to_string(&p), "config": config, "counts": counts }),
     ))
+}
+
+/// Whether the daily river for `date` has been attempted, without starting it.
+/// Returns a `DailyStatus` (JSON).
+#[wasm_bindgen]
+pub fn profile_daily_status(profile: &str, date: &str) -> Result<String, JsError> {
+    let p = save::profile_from_string(profile).map_err(js)?;
+    Ok(to_json(&meta::daily_status(&p, date).map_err(js)?))
 }
 
 /// The daily river's `DailySetup` for a date (JSON), without touching a profile.

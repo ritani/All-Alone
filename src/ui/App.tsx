@@ -59,6 +59,8 @@ function Screens() {
         <Setup
           profile={s.profile}
           hasRun={s.hasRun}
+          run={s.view}
+          daily={store.dailyStatus()}
           onBack={() => store.go('title')}
           onStart={(o) => store.startRun(o)}
           onDaily={() => store.startDaily()}
@@ -78,6 +80,8 @@ function Screens() {
           seq={s.seq}
           onAct={(a) => void store.act(a)}
           onMenu={() => store.go('title')}
+          unread={s.codexUnread}
+          onRead={(id) => store.markRead(id)}
         />
       );
       break;

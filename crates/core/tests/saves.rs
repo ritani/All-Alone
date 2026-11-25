@@ -171,3 +171,53 @@ fn profiles_are_validated_too() {
     bad(&|v| v["version"] = 7.into());
     assert!(profile_from_string(&"{".repeat(MAX_PROFILE_BYTES + 2)).is_err());
 }
+
+// ---------------------------------------------------------------- Older versions
+
+const RUN_V1_LIVE: &str = include_str!("fixtures/run_v1_live.json");
+const RUN_V1_ENDED: &str = include_str!("fixtures/run_v1_ended.json");
+const PROFILE_V1: &str = include_str!("fixtures/profile_v1.json");
+
+/// Saves written by version 1 (milestone M3) still load, and play on.
+#[test]
+fn version_1_saves_load() {
+    assert!(RUN_V1_LIVE.contains("\"version\":1"));
+    let mut s = load_from_string(RUN_V1_LIVE).expect("v1 run in progress loads");
+    assert!(!s.ended());
+    // It re-saves at the current version and loads again unchanged.
+    let again = save_to_string(&s);
+    assert!(again.contains(&format!("\"version\":{RUN_VERSION}")));
+    assert_eq!(load_from_string(&again).unwrap(), s);
+    // And it can be played on.
+    for _ in 0..50 {
+        if s.ended() {
+            break;
+        }
+        let a = common::heuristic(&s);
+        all_alone_core::dispatch(&mut s, &a).unwrap();
+    }
+
+    let e = load_from_string(RUN_V1_ENDED).expect("v1 ended run loads");
+    let l = e.ledger.as_ref().unwrap();
+    assert_eq!(l.places_all as usize, all_alone_core::content::places::PLACES.len());
+    assert_eq!(
+        l.places_visited as usize,
+        e.places.values().filter(|p| p.visited).count(),
+        "the migrated ledger counts the places the run reached"
+    );
+    assert!(l.places_visited > 0);
+
+    let p = profile_from_string(PROFILE_V1).expect("v1 profile loads");
+    assert_eq!(p.best.len(), 1);
+    assert_eq!(p.best[0].places_all, 0, "unknown for old ledgers");
+    let back = profile_to_string(&p);
+    assert!(back.contains(&format!("\"version\":{PROFILE_VERSION}")));
+    assert_eq!(profile_from_string(&back).unwrap(), p);
+    // The old profile still takes a new run's ledger.
+    let mut p = p;
+    let mut fresh = load_from_string(RUN_V1_LIVE).unwrap();
+    let mut j = all_alone_core::Outcome::default();
+    all_alone_core::systems::forfeit(&mut fresh, &mut j);
+    all_alone_core::meta::apply_run_end(&mut p, fresh.ledger.as_ref().unwrap()).unwrap();
+    assert_eq!(p.totals.runs, 2);
+}

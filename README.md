@@ -7,12 +7,16 @@ repair the ferry before the river freezes.
 Text and line art, built for phones first. Web now; iOS and Android later via
 Capacitor from the same build.
 
-**Status:** milestone M3 (lock house UI). The whole game runs in the Rust
-core (`crates/core`, compiled to WebAssembly) and is playable end to end in
-the browser: new run setup, the daily river, the lock house, choice events,
-night, dawn, death and the ledger, marks and remnants. Expedition phases
-(packing, travel, rooms, encounters, barter) use a plain fallback screen until
-M4 designs them.
+**Status:** milestone M4 (expeditions). The whole game runs in the Rust
+core (`crates/core`, compiled to WebAssembly) and is playable start to end in
+the browser: new run setup and the daily river, the lock house and its
+grounds, packing, the road, places and their rooms, encounters with the
+Stilled, the widow's barter, the codex, the ferry, and every ending (death,
+departure, frozen in, or giving a run up) with its ledger, marks and remnants.
+Any phase without a designed screen falls back to a plain one.
+
+Saves are versioned: run and profile saves are at version 2; version 1 saves
+(M3) are migrated on load (`crates/core/tests/fixtures`).
 
 The design, look, technology, security rules and milestones are in
 [docs/PLAN.md](docs/PLAN.md). Read it before changing anything.

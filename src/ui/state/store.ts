@@ -13,6 +13,7 @@ import {
   introLines,
   profile as coreProfile,
   type Action,
+  type DailyStatus,
   type Difficulty,
   type GameEvent,
   type Ledger,
@@ -74,6 +75,8 @@ export interface AppState {
   notices: string[];
   end: EndState | null;
   fatal: string | null;
+  /** Codex entries found in this run and not yet opened. */
+  codexUnread: string[];
 }
 
 export interface StoreDeps {
@@ -118,6 +121,7 @@ function initial(): AppState {
     notices: [],
     end: null,
     fatal: null,
+    codexUnread: [],
   };
 }
 
@@ -241,7 +245,26 @@ export class Store {
       this.dropRun();
       return;
     }
-    this.set({ hasRun: true, view: run.view(), fresh: 0 });
+    this.set({ hasRun: true, view: run.view(), fresh: 0, codexUnread: await this.loadUnread() });
+  }
+
+  private async loadUnread(): Promise<string[]> {
+    const text = await this.read(KEYS.codexUnread);
+    if (text === null) return [];
+    try {
+      const v: unknown = JSON.parse(text);
+      return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.length <= 40).slice(0, 200) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /** An unread codex entry has been opened. */
+  markRead(id: string): void {
+    if (!this.state.codexUnread.includes(id)) return;
+    const codexUnread = this.state.codexUnread.filter((x) => x !== id);
+    this.set({ codexUnread });
+    this.persist(KEYS.codexUnread, JSON.stringify(codexUnread));
   }
 
   // ------------------------------------------------------------ navigation
@@ -265,6 +288,7 @@ export class Store {
   // ------------------------------------------------------------ starting runs
 
   startRun(opts: { difficulty: Difficulty; background: string; keepsake: string | null }): void {
+    if (this.run) this.forfeitRun();
     this.guard(() => {
       const seed = (this.deps.seed ?? randomSeed)();
       const config = coreProfile.runConfig(this.profileSave, seed, opts.difficulty, opts.background, opts.keepsake);
@@ -273,6 +297,7 @@ export class Store {
   }
 
   startDaily(): void {
+    if (this.run) this.forfeitRun();
     this.guard(() => {
       const date = (this.deps.today ?? localDate)();
       const { profile: next, config, counts } = coreProfile.daily(this.profileSave, date);
@@ -288,7 +313,9 @@ export class Store {
     this.run = run;
     this.endApplied = false;
     this.persist(KEYS.run, run.save());
+    this.persist(KEYS.codexUnread, '[]');
     this.set({
+      codexUnread: [],
       screen: 'intro',
       hasRun: true,
       view: run.view(),
@@ -356,20 +383,27 @@ export class Store {
   }
 
   private handleEvents(events: GameEvent[], view: View): void {
-    const marks = new Map((this.state.profile?.marks ?? []).map((m) => [m.id, m]));
+    // At the end of a run the ledger page lists new marks; no toasts over it.
+    const ending = events.some((e) => e.type === 'run_ended');
     for (const ev of events) {
       switch (ev.type) {
         case 'mark': {
-          if (!ev.new) break;
-          const m = marks.get(ev.id);
-          const named = m && !(m.hidden && !m.earned);
-          this.toast({
-            title: named ? `Mark. ${m.name}` : 'Mark. A hidden one.',
-            text: named ? m.text : 'Its name will be in the ledger.',
-            icon: m?.icon ?? 'sigil_eye',
-            tone: 'quiet',
-          });
+          if (!ev.new || ending) break;
+          // The core names the mark as it is earned, hidden ones included.
+          this.toast({ title: `Mark. ${ev.name}`, text: ev.text, icon: ev.icon, tone: 'quiet' });
           this.haptics.pulse('tick');
+          break;
+        }
+        case 'codex': {
+          const entry = view.codex.sections.flatMap((s) => s.entries).find((e) => e.id === ev.id);
+          if (!this.state.codexUnread.includes(ev.id)) {
+            const codexUnread = [...this.state.codexUnread, ev.id];
+            this.set({ codexUnread });
+            this.persist(KEYS.codexUnread, JSON.stringify(codexUnread));
+          }
+          if (entry) {
+            this.toast({ title: `Into the codex. ${entry.title}`, text: null, icon: entry.icon, tone: 'quiet' });
+          }
           break;
         }
         case 'skill_up': {
@@ -436,17 +470,41 @@ export class Store {
     });
   }
 
+  /** Whether today's daily river has already been attempted (without starting it). */
+  dailyStatus(): DailyStatus | null {
+    if (!this.profileSave) return null;
+    try {
+      return coreProfile.dailyStatus(this.profileSave, (this.deps.today ?? localDate)());
+    } catch (e) {
+      this.isBroken(e);
+      return null;
+    }
+  }
+
   /** Leave the ended page for the title. */
   leaveEnded(): void {
     this.dropRun();
     this.set({ screen: 'title', view: null, end: null, hasRun: false, fresh: 0 });
   }
 
-  /** Abandon the run in progress (from the new-run page, after confirmation). */
-  abandonRun(): void {
+  /**
+   * Give up the run in progress (from the new-run page, after confirmation).
+   * The core ends it properly ("Gave up"), and its ledger is entered in the
+   * profile once, so beginning again never silently discards a run.
+   * Returns the ledger, or null if there was no run.
+   */
+  forfeitRun(): Ledger | null {
+    const run = this.run;
+    if (!run) return null;
+    let ledger: Ledger | null = null;
+    this.guard(() => {
+      if (!run.ended) run.forfeit();
+      this.finishRun();
+      ledger = this.state.end?.ledger ?? null;
+    });
     this.dropRun();
-    this.remove(KEYS.run);
-    this.set({ hasRun: false, view: null });
+    this.set({ hasRun: false, view: null, end: null });
+    return ledger;
   }
 
   // ------------------------------------------------------------ profile

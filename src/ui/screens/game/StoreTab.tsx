@@ -5,8 +5,9 @@ import { Hairline } from '../../components/Hairline';
 import { Icon } from '../../components/Icon';
 import { Rule } from '../../components/Rule';
 
-const KIND_ORDER = [
+export const KIND_ORDER = [
   'food',
+  'drink',
   'medicine',
   'part',
   'weapon',
@@ -23,8 +24,9 @@ const KIND_ORDER = [
   'key',
   'comfort',
 ];
-const KIND_NAMES: Record<string, string> = {
-  food: 'Food and drink',
+export const KIND_NAMES: Record<string, string> = {
+  food: 'Food',
+  drink: 'Drink',
   medicine: 'Medicine',
   part: 'Ferry parts',
   weapon: 'Weapons',

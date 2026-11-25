@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import type { Action, ActionView, GroundsView, StationView, View } from '../../../core';
 import { ActionButton, ActionList } from '../../components/ActionButton';
 import { Hairline } from '../../components/Hairline';
@@ -6,8 +7,8 @@ import { Rule } from '../../components/Rule';
 import { groupActions, groupName } from '../../format';
 
 /** Groups drawn on the House tab, in this order. Others have their own tab. */
-export const HOUSE_GROUPS = ['ferry', 'house', 'food', 'survive', 'night'];
-const OTHER_TABS = new Set(['station', 'craft', 'trip']);
+export const HOUSE_GROUPS = ['ferry', 'house', 'survive', 'night'];
+const OTHER_TABS = new Set(['station', 'craft', 'trip', 'food']);
 
 export function Costs({ costs }: { costs: { item: string; name: string; icon: string; need: number; have: number }[] }) {
   return (
@@ -60,23 +61,56 @@ function Station({ s, build, onAct }: { s: StationView; build: ActionView | unde
   );
 }
 
-function Grounds({ g }: { g: GroundsView }) {
-  const rows: { key: string; icon: string; name: string; text: string }[] = [];
-  if (g.fire_until) rows.push({ key: 'fire', icon: 'stove', name: 'Fire', text: `Burning until ${g.fire_until}` });
-  if (g.snares_set > 0 || g.snared > 0)
-    rows.push({
-      key: 'snares',
-      icon: 'trap',
-      name: 'Trap line',
-      text: `${g.snares_set} set${g.snared > 0 ? `, ${g.snared} caught` : ''}`,
-    });
-  if (g.line_set)
-    rows.push({
-      key: 'line',
-      icon: 'fish',
-      name: 'Night line',
-      text: `${g.line_baited ? 'Baited' : 'Unbaited'}${g.hooked > 0 ? `, ${g.hooked} on it` : ''}`,
-    });
+const FOOD_TYPES: Record<string, string> = {
+  set_snares: 'snares',
+  check_snares: 'snares',
+  set_line: 'line',
+  check_line: 'line',
+  plant: 'garden',
+  tend_garden: 'garden',
+  harvest: 'garden',
+  forage: 'bank',
+};
+
+/** One of the grounds: a name, its state, a line on timing, and its own actions. */
+function Ground({
+  icon,
+  name,
+  state,
+  hint,
+  actions,
+  onAct,
+  children,
+}: {
+  icon: string;
+  name: string;
+  state: string;
+  hint?: string | undefined;
+  actions: ActionView[];
+  onAct: (a: Action) => void;
+  children?: ComponentChildren;
+}) {
+  return (
+    <div class="ground">
+      <div class="figure-line">
+        <span class="label">
+          <Icon name={icon} size={16} /> {name}
+        </span>
+        <span class="ground__state">{state}</span>
+      </div>
+      {children}
+      {hint && <p class="ground__hint">{hint}</p>}
+      {actions.length > 0 && <ActionList actions={actions} onAct={onAct} />}
+    </div>
+  );
+}
+
+function Grounds({ g, actions, onAct }: { g: GroundsView; actions: ActionView[]; onAct: (a: Action) => void }) {
+  const of = (k: string) => actions.filter((a) => FOOD_TYPES[a.action.type] === k);
+  const snares = of('snares');
+  const line = of('line');
+  const garden = of('garden');
+  const bank = of('bank');
   return (
     <section class="section">
       <Rule>Grounds</Rule>
@@ -96,24 +130,41 @@ function Grounds({ g }: { g: GroundsView }) {
           danger={g.barricade_max > 0 && g.barricade / g.barricade_max < 0.25}
         />
       </div>
-      {rows.map((r) => (
-        <div key={r.key} class="figure-line">
-          <span class="label">
-            <Icon name={r.icon} size={16} /> {r.name}
-          </span>
-          <span>{r.text}</span>
-        </div>
-      ))}
+      <div class="figure-line">
+        <span class="label">
+          <Icon name="stove" size={16} /> Fire
+        </span>
+        <span>{g.fire_until ? `Burning until ${g.fire_until}` : 'Out'}</span>
+      </div>
+      {(g.snares_set > 0 || snares.length > 0) && (
+        <Ground
+          icon="trap"
+          name="Trap line"
+          state={g.snares_set === 0 ? 'Not set' : `${g.snares_set} set${g.snared > 0 ? `, ${g.snared} caught` : ''}`}
+          hint={g.snares_set === 0 ? 'Set them by day. Walk the line after a night or two.' : 'Walk the line by day. Bait and weather decide the catch.'}
+          actions={snares}
+          onAct={onAct}
+        />
+      )}
+      {(g.line_set || line.length > 0) && (
+        <Ground
+          icon="fish"
+          name="Night line"
+          state={!g.line_set ? 'Not set' : `${g.line_baited ? 'Baited' : 'Unbaited'}${g.hooked > 0 ? `, ${g.hooked} on it` : ''}`}
+          hint={g.line_set ? 'Haul it in after a night. Bait helps.' : 'Set it from the lock gate; it fishes overnight.'}
+          actions={line}
+          onAct={onAct}
+        />
+      )}
       {g.plots_total > 0 && (
-        <div class="ground">
-          <div class="figure-line">
-            <span class="label">
-              <Icon name="garden" size={16} /> Garden
-            </span>
-            <span class="num">
-              {g.plots.length}/{g.plots_total} sown{g.tended_today ? ' · watered' : ''}
-            </span>
-          </div>
+        <Ground
+          icon="garden"
+          name="Garden"
+          state={`${g.plots.length}/${g.plots_total} sown${g.tended_today ? ', watered today' : ''}`}
+          hint={g.plots.length > 0 && !g.tended_today ? 'Water it each day it does not rain.' : undefined}
+          actions={garden}
+          onAct={onAct}
+        >
           {g.plots.map((p, i) => (
             <div key={i} class="plot">
               <span class="plot__name">{p.name}</span>
@@ -121,8 +172,9 @@ function Grounds({ g }: { g: GroundsView }) {
               <span class="plot__state label">{p.ready ? 'Ready' : `${p.growth}/${p.need}`}</span>
             </div>
           ))}
-        </div>
+        </Ground>
       )}
+      {bank.length > 0 && <Ground icon="herb" name="The bank" state="" actions={bank} onAct={onAct} />}
     </section>
   );
 }
@@ -143,7 +195,7 @@ export function HouseTab({ view, onAct }: { view: View; onAct: (a: Action) => vo
           <ActionList actions={list} onAct={onAct} />
         </section>
       ))}
-      <Grounds g={view.grounds} />
+      <Grounds g={view.grounds} actions={view.actions.filter((a) => a.group === 'food')} onAct={onAct} />
       <section class="section">
         <Rule>Stations</Rule>
         <ul class="stations">

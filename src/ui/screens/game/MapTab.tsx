@@ -12,11 +12,14 @@ export function MapDrawing({
   paths,
   selected,
   onSelect,
+  route,
 }: {
   nodes: MapNode[];
   paths: [string, string][];
   selected: string | null;
   onSelect: (id: string) => void;
+  /** Draw the way between two nodes, from the first to the second. */
+  route?: [string, string] | undefined;
 }) {
   const at = new Map(nodes.map((n) => [n.id, n]));
   // Map coordinates are 0..100. Fit the known places into a 100 x 64 drawing,
@@ -40,6 +43,17 @@ export function MapDrawing({
           return <line key={`${a}-${b}`} x1={X(p.x)} y1={Y(p.y)} x2={X(q.x)} y2={Y(q.y)} vector-effect="non-scaling-stroke" />;
         })}
       </g>
+      {route &&
+        (() => {
+          const p = at.get(route[0]);
+          const q = at.get(route[1]);
+          if (!p || !q) return null;
+          return (
+            <g class="map__route">
+              <line x1={X(p.x)} y1={Y(p.y)} x2={X(q.x)} y2={Y(q.y)} vector-effect="non-scaling-stroke" />
+            </g>
+          );
+        })()}
       {nodes.map((n) => {
         const cls = ['map__node', n.visited ? 'map__node--visited' : '', n.id === selected ? 'map__node--on' : '']
           .filter(Boolean)

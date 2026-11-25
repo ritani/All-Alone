@@ -14,6 +14,7 @@ import init, {
   profile_apply_run_end,
   profile_check,
   profile_daily,
+  profile_daily_status,
   profile_new,
   profile_run_config,
   profile_unlock,
@@ -22,6 +23,7 @@ import init, {
 import type {
   Action,
   DailySetup,
+  DailyStatus,
   Difficulty,
   GameConfig,
   GameError,
@@ -115,6 +117,11 @@ export class Run {
     return call(() => json<Outcome>(this.game.dispatch(JSON.stringify(action))));
   }
 
+  /** Give the run up: it ends with the cause "Gave up" and a ledger, like any other end. */
+  forfeit(): Outcome {
+    return call(() => json<Outcome>(this.game.forfeit()));
+  }
+
   view(): View {
     return call(() => json<View>(this.game.view()));
   }
@@ -149,6 +156,9 @@ export const profile = {
   unlock: (save: string, unlock: Unlock): string => call(() => profile_unlock(save, JSON.stringify(unlock))),
   runConfig: (save: string, seed: number, difficulty: Difficulty, background: string, keepsake: string | null): GameConfig =>
     call(() => json<GameConfig>(profile_run_config(save, seed >>> 0, difficulty, background, keepsake))),
+  /** Whether the daily river for `date` has been attempted, without starting it. */
+  dailyStatus: (save: string, date: string): DailyStatus =>
+    call(() => json<DailyStatus>(profile_daily_status(save, date))),
   /** Starts today's daily river: records the attempt. `counts` is false on a repeat. */
   daily: (save: string, date: string): { profile: string; config: GameConfig; counts: boolean } =>
     call(() => json<{ profile: string; config: GameConfig; counts: boolean }>(profile_daily(save, date))),

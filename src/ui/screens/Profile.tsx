@@ -3,7 +3,8 @@
  * short guide. Everything shown comes from the core's ProfileView.
  */
 import { useState } from 'preact/hooks';
-import type { Ledger, ProfileView, Unlock } from '../../core';
+import type { CodexEntryView, Ledger, ProfileView, Unlock } from '../../core';
+import { CodexSheet } from './game/NotesTab';
 import { Button } from '../components/Button';
 import { Hairline } from '../components/Hairline';
 import { Icon } from '../components/Icon';
@@ -43,6 +44,47 @@ export function Marks({ profile, onBack }: { profile: ProfileView; onBack: () =>
 
 function endName(l: Ledger): string {
   return l.end === 'departure' ? 'Left' : l.end === 'freeze_out' ? 'Frozen in' : 'Dead';
+}
+
+const KIND_NAMES: [string, string][] = [
+  ['note', 'Notes'],
+  ['photograph', 'Photographs'],
+  ['radio', 'Radio fragments'],
+  ['field_guide', 'Field guide'],
+];
+
+/** Every codex entry found in any run; each opens in a sheet. */
+function EverFound({ entries }: { entries: CodexEntryView[] }) {
+  const [open, setOpen] = useState<CodexEntryView | null>(null);
+  if (entries.length === 0) return <p class="prose prose--dim">Nothing found yet. Notes, photographs and the wireless keep what they know.</p>;
+  return (
+    <>
+      {KIND_NAMES.map(([kind, name]) => {
+        const list = entries.filter((e) => e.kind === kind);
+        if (list.length === 0) return null;
+        return (
+          <div key={kind} class="codex-sec">
+            <div class="codex-sec__head">
+              <Icon name={list[0]?.icon ?? 'journal'} size={20} />
+              <h3 class="codex-sec__name">{name}</h3>
+              <span class="num codex-sec__count">{list.length}</span>
+            </div>
+            <ul class="codex-sec__list">
+              {list.map((e) => (
+                <li key={e.id}>
+                  <button type="button" class="codex-entry" onClick={() => setOpen(e)}>
+                    <span class="codex-entry__title">{e.title}</span>
+                    <Icon name="forward" size={16} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+      {open && <CodexSheet entry={open} onClose={() => setOpen(null)} />}
+    </>
+  );
 }
 
 export function Record({ profile, onBack }: { profile: ProfileView; onBack: () => void }) {
@@ -112,6 +154,7 @@ export function Record({ profile, onBack }: { profile: ProfileView; onBack: () =
           </span>
         </div>
         <Hairline value={profile.codex_found} max={profile.codex_total} label="Codex entries ever found" />
+        <EverFound entries={profile.codex} />
       </section>
 
       <section class="section">

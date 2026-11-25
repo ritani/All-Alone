@@ -256,11 +256,17 @@ pub fn build(s: &mut GameState, j: &mut Journal, st: Station) {
         station: st,
         level: lvl + 1,
     });
-    journal::find(
-        s,
-        j,
-        &format!("{}: {}. {}", stations::def(st).name, next.name, next.effect),
-    );
+    journal::find(s, j, &build_line(stations::def(st).name, next.name, next.effect));
+}
+
+/// "Stove: Iron stove. ..." but "Workbench built. ..." when the level's name
+/// already says which station it is.
+pub fn build_line(station: &str, level: &str, effect: &str) -> String {
+    if level.to_lowercase().contains(&station.to_lowercase()) {
+        format!("{level} built. {effect}")
+    } else {
+        format!("{station}: {level}. {effect}")
+    }
 }
 
 pub fn can_craft(s: &GameState, r: &RecipeDef) -> Result<(), String> {
@@ -415,9 +421,15 @@ pub fn draw_water(s: &mut GameState, j: &mut Journal) {
         qty: n,
     });
     let line = if s.frozen {
-        format!("You break the ice at the lock edge and fill {n} measures, brown and cold.")
+        format!(
+            "You break the ice at the lock edge and fill {}, brown and cold.",
+            journal::count(n, "measure", "measures")
+        )
     } else {
-        format!("You fill {n} measures from the lock. Brown water. Boil it.")
+        format!(
+            "You fill {} from the lock. Brown water. Boil it.",
+            journal::count(n, "measure", "measures")
+        )
     };
     journal::plain(s, j, &line);
 }
@@ -480,7 +492,10 @@ pub fn listen(s: &mut GameState, j: &mut Journal) {
             s,
             j,
             Tone::Danger,
-            &format!("From what they say at Saltmouth, the river here will close in about {left} days."),
+            &format!(
+                "From what they say at Saltmouth, the river here will close in about {}.",
+                journal::count(left, "day", "days")
+            ),
         );
     }
     crate::systems::events::maybe(s, j, crate::content::events::Ctx::Radio, crate::state::Resume::Home);
@@ -579,7 +594,10 @@ pub fn can_cast_off(s: &GameState) -> Result<(), String> {
         return Err("The river is frozen.".into());
     }
     if s.ferry.len() < 4 {
-        return Err(format!("The ferry needs {} more parts.", 4 - s.ferry.len()));
+        return Err(format!(
+            "The ferry needs {} more.",
+            journal::count(4 - s.ferry.len() as u32, "part", "parts")
+        ));
     }
     let meals = inventory::meal_count(&s.store);
     let water = inv_count(&s.store, "water_clean");

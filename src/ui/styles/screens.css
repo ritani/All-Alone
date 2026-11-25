@@ -590,6 +590,32 @@
   font-size: 2.25rem;
 }
 
+.ended__art {
+  margin: 0 calc(-1 * var(--sp-2)) var(--sp-2);
+  animation: fade-in 2400ms var(--ease) both;
+}
+
+.ended__coda {
+  font-style: italic;
+}
+
+/* Leaving is quiet: the page settles in slowly, nothing in red. */
+.ended--departure .ended__text {
+  font-size: 1.25rem;
+  line-height: 1.5;
+}
+
+.ended--departure .page__title {
+  font-family: var(--font-prose);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.ended--freeze_out .ended__why,
+.ended--freeze_out .page__title {
+  color: var(--c-dim);
+}
+
 .kit__journal .journal {
   height: auto;
   padding: 0;

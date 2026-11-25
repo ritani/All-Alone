@@ -386,6 +386,38 @@ pub static EVENTS: &[EventDef] = &[
         ..E
     },
     EventDef {
+        id: "horn_at_dawn",
+        weight: 10,
+        once: false,
+        req: &[Cond::MinDay(19), Cond::NotFrozen, Cond::NoFlag("horn_found")],
+        title: "A horn",
+        text: "Before full light, a motor horn from the far side of town, past Quarry Lane. One long note. It does not stop.",
+        opts: &[
+            Opt {
+                label: "Go and find it",
+                minutes: 150,
+                odds: Odds::Pct(60),
+                ..Opt {
+                    ok: Res {
+                        text: "A breakdown lorry nose-down in a ditch outside a motor garage, the driver slumped over the wheel. You ease him off the horn. On the seat, a ticket book.",
+                        fx: &[Vital(Nerve, -8), Codex("note_tow_ticket"), Flag("horn_found")],
+                    },
+                    fail: Res {
+                        text: "Halfway there the horn stops. Something is coming down Quarry Lane toward you, and it has heard you.",
+                        fx: &[Fight(Creature::Runner, 1, Band::Close), Vital(Nerve, -6)],
+                    },
+                    ..BLANK
+                }
+            },
+            opt(
+                "Stay in until it stops",
+                "It stops a little after noon. The quiet after it is worse.",
+                &[Vital(Nerve, -4)],
+            ),
+        ],
+        ..E
+    },
+    EventDef {
         id: "barrel_ice",
         weight: 10,
         req: &[Cond::MinDay(22), Cond::Station(Station::Barrel, 1)],

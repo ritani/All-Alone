@@ -33,6 +33,8 @@ export const KEYS = {
   profile: 'all-alone.profile',
   runRejected: 'all-alone.run.rejected',
   profileRejected: 'all-alone.profile.rejected',
+  /** Codex entries found in this run and not yet opened (UI state only). */
+  codexUnread: 'all-alone.codex-unread',
 } as const;
 
 function isQuotaError(e: unknown): boolean {

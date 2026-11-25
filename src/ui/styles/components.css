@@ -773,3 +773,7 @@
 .table__caption + .table--score {
   margin-top: var(--sp-2);
 }
+
+.tab__flag--quiet {
+  background: var(--c-line);
+}

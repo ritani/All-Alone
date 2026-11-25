@@ -38,6 +38,8 @@
 }
 
 .game__menu {
+  flex: none;
+  white-space: nowrap;
   display: flex;
   align-items: center;
   min-height: var(--touch);
@@ -715,15 +717,129 @@
 
 .part {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--sp-2);
   min-height: 1.75rem;
+  padding: var(--sp-2) 0;
+  border-bottom: var(--lw-hair) solid var(--c-faint);
   font-size: var(--fs-small);
   color: var(--c-dim);
 }
 
-.part__name {
+.part .icon {
+  margin-top: 1px;
+}
+
+.part__body {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.part__need {
+  color: var(--c-dim);
+  line-height: 1.35;
+}
+
+.part__state {
+  flex: none;
+  padding-top: 2px;
+}
+
+.voyage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding-top: var(--sp-2);
+}
+
+.voyage__head {
+  color: var(--c-dim);
+  margin-bottom: var(--sp-1);
+}
+
+/* Codex: sections with found/total; entries open in a sheet. */
+.codex-sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.codex-sec__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.codex-sec__name {
+  flex: 1;
+  font-size: var(--fs-body);
+  font-weight: 400;
+}
+
+.codex-sec__count,
+.codex-sec__empty {
+  color: var(--c-dim);
+  font-size: var(--fs-small);
+}
+
+.codex-sec__new {
+  color: var(--c-line);
+}
+
+.codex-sec__list {
+  border-top: var(--lw-hair) solid var(--c-faint);
+}
+
+.codex-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: var(--touch);
+  padding: var(--sp-2) 0 var(--sp-2) calc(20px + var(--sp-3));
+  border-bottom: var(--lw-hair) solid var(--c-faint);
+  text-align: left;
+  color: var(--c-dim);
+  font-family: var(--font-prose);
+}
+
+.codex-entry__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.codex-entry:hover {
+  color: var(--c-line);
+  background: var(--c-panel);
+}
+
+.codex-entry--new {
+  color: var(--c-line);
+}
+
+/* A short bone tick before an unread entry. */
+.codex-entry--new .codex-entry__title::before {
+  content: '';
+  display: inline-block;
+  width: 0.75rem;
+  margin: 0 var(--sp-2) 0.3em calc(-0.75rem - var(--sp-2));
+  border-top: var(--lw-hair) solid var(--c-line);
+}
+
+.codex-entry__new {
+  color: var(--c-line);
+}
+
+.codex-sheet__kind {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--c-dim);
+  margin-bottom: var(--sp-3);
 }
 
 .part--held,
@@ -1004,4 +1120,31 @@
   .hud {
     gap: var(--sp-1);
   }
+}
+
+/* ------------------------------------------------------------------ Grounds: each with its own state and work */
+.ground {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.section > .ground + .ground,
+.section > .figure-line + .ground {
+  margin-top: var(--sp-4);
+}
+
+.ground__state {
+  color: var(--c-line);
+  text-align: right;
+}
+
+.ground__hint {
+  font-size: var(--fs-small);
+  color: var(--c-dim);
+  line-height: 1.35;
+}
+
+.ground .acts {
+  margin-top: var(--sp-1);
 }

@@ -37,6 +37,17 @@ fn report(d: Difficulty) -> Report {
         }
         days.push(r.days);
     }
+    win_days.sort_unstable();
+    if let (Some(lo), Some(hi)) = (win_days.first(), win_days.last()) {
+        let q = |f: usize| win_days[win_days.len() * f / 4];
+        println!(
+            "{}: winning days min {lo}, lower quartile {}, median {}, upper quartile {}, max {hi}",
+            d.name(),
+            q(1),
+            q(2),
+            q(3)
+        );
+    }
     let rep = Report {
         rate: f64::from(wins) / f64::from(SEEDS),
         median_days: median(days),

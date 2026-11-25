@@ -6,6 +6,8 @@ export interface Tab<T extends string> {
   icon: string;
   /** A small marker: something here wants attention. */
   flag?: boolean;
+  /** The marker is news (bone), not danger (red). */
+  quiet?: boolean;
 }
 
 export interface TabBarProps<T extends string> {
@@ -58,7 +60,12 @@ export function TabBar<T extends string>({ tabs, current, onChange, label, idBas
             >
               <Icon name={t.icon} size={20} />
               <span class="tab__label">{t.label}</span>
-              {t.flag && <span class="tab__flag" aria-label="needs attention" />}
+              {t.flag && (
+                <span
+                  class={t.quiet ? 'tab__flag tab__flag--quiet' : 'tab__flag'}
+                  aria-label={t.quiet ? 'something new' : 'needs attention'}
+                />
+              )}
             </button>
           );
         })}

@@ -18,7 +18,7 @@ fn first_night_mark_is_announced_once() {
         seen += out
             .events
             .iter()
-            .filter(|e| matches!(e, GameEvent::Mark { id, new: true } if id == "first_night"))
+            .filter(|e| matches!(e, GameEvent::Mark { id, new: true, .. } if id == "first_night"))
             .count();
     }
     assert_eq!(seen, 1);
@@ -36,7 +36,7 @@ fn held_marks_are_not_new() {
         assert!(
             !out.events
                 .iter()
-                .any(|e| matches!(e, GameEvent::Mark { id, new: true } if id == "first_night"))
+                .any(|e| matches!(e, GameEvent::Mark { id, new: true, .. } if id == "first_night"))
         );
     }
 }
@@ -173,4 +173,53 @@ fn ledgers_from_outside_are_validated() {
     l.background = "astronaut".into();
     assert!(meta::apply_run_end(&mut p, &l).is_err());
     assert_eq!(p, Profile::new());
+}
+
+/// Giving up ends the run properly: ledgered as "Gave up", scored, applied once.
+#[test]
+fn forfeit_is_a_real_ending() {
+    let r = common::play(&common::config(31, Difficulty::Still), common::heuristic, 400);
+    let mut s = r.state;
+    assert!(!s.ended());
+    let day = s.day();
+    let out = all_alone_core::forfeit(&mut s).unwrap();
+    assert!(s.ended());
+    assert!(out.events.iter().any(|e| matches!(e, GameEvent::RunEnded { .. })));
+    let l = s.ledger.clone().unwrap();
+    assert_eq!(l.cause, "Gave up");
+    assert!(l.text.starts_with("You gave it up "), "{}", l.text);
+    assert!(l.text.ends_with(&format!(", on day {day}.")));
+    assert!(!s.marks.contains("day_one"), "giving up is not dying on day one");
+    // Again: an error, nothing changes.
+    let before = s.clone();
+    assert_eq!(all_alone_core::forfeit(&mut s).unwrap_err().code, "run_over");
+    assert_eq!(s, before);
+    let mut p = Profile::new();
+    meta::apply_run_end(&mut p, &l).unwrap();
+    assert_eq!(p.totals.runs, 1);
+    assert_eq!(meta::apply_run_end(&mut p, &l).unwrap_err().code, "already_applied");
+    assert_eq!(p.totals.runs, 1);
+    // The profile shows the codex it has ever found, by name.
+    let v = meta::profile_view(&p);
+    assert_eq!(v.codex.len() as u32, v.codex_found);
+    assert!(
+        v.codex
+            .iter()
+            .any(|c| c.id == "note_orme" && !c.title.is_empty() && !c.text.is_empty())
+    );
+}
+
+/// Mark events and the view's marks carry names, even for hidden marks.
+#[test]
+fn marks_are_named_when_earned() {
+    let mut s = all_alone_core::new_game(&common::config(5, Difficulty::Still)).unwrap();
+    all_alone_core::forfeit(&mut s).unwrap();
+    assert_eq!(s.day(), 1);
+    assert!(!s.marks.contains("day_one"), "giving up on day one is not dying on it");
+    let r = common::play(&common::config(7, Difficulty::Still), common::heuristic, 60_000);
+    let v = all_alone_core::view(&r.state);
+    assert!(!v.marks.is_empty());
+    for m in &v.marks {
+        assert!(!m.name.is_empty() && m.name != "???" && !m.text.is_empty() && !m.icon.is_empty());
+    }
 }

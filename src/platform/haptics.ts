@@ -22,9 +22,11 @@ export function webHaptics(): Haptics {
   return {
     pulse(kind) {
       try {
-        if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
-          navigator.vibrate(PATTERNS[kind]);
-        }
+        if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+        // Browsers refuse (and log) vibration before the first tap; do not ask until then.
+        const active = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+        if (active && !active.hasBeenActive) return;
+        navigator.vibrate(PATTERNS[kind]);
       } catch {
         // Vibration is a nicety; never let it break play.
       }

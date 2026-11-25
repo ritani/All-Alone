@@ -214,8 +214,22 @@ pub struct MapView {
 #[cfg_attr(feature = "ts", derive(TS))]
 pub struct CodexEntryView {
     pub id: String,
+    pub kind: CodexKind,
     pub title: String,
     pub text: String,
+    pub icon: String,
+}
+
+impl CodexEntryView {
+    pub fn of(c: &codex::CodexDef) -> Self {
+        CodexEntryView {
+            id: c.id.to_string(),
+            kind: c.kind,
+            title: c.title.to_string(),
+            text: c.text.to_string(),
+            icon: c.kind.icon().to_string(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -268,6 +282,8 @@ pub struct FerryPartView {
     pub icon: String,
     pub installed: bool,
     pub in_store: bool,
+    /// What it still needs, in one line; null once fitted.
+    pub need: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -277,6 +293,11 @@ pub struct FerryView {
     pub installed: u32,
     pub ready: bool,
     pub frozen: bool,
+    /// Provisions for the voyage, put by in the store, and what it takes.
+    pub meals: u32,
+    pub meals_need: u32,
+    pub water: u32,
+    pub water_need: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -368,6 +389,12 @@ pub struct EncounterView {
     pub dark: bool,
     /// What happened in the last exchange.
     pub log: Vec<String>,
+    /// What you would strike with ("bare hands" without a weapon).
+    pub weapon: String,
+    /// A gun you carry, loaded or not, and its rounds.
+    pub gun: Option<String>,
+    pub ammo: u32,
+    pub ammo_name: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -400,6 +427,20 @@ pub struct TravelView {
     pub hurry_minutes: u32,
     /// You will arrive after dusk if you walk.
     pub arrive_dark: bool,
+    /// Clock time on arrival, walking and hurrying ("HH:MM").
+    pub arrive_at: String,
+    pub hurry_arrive_at: String,
+    pub hurry_arrive_dark: bool,
+}
+
+/// Something the destination is known to call for, and whether the pack has it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS))]
+pub struct NeedView {
+    pub id: String,
+    pub text: String,
+    pub icon: String,
+    pub met: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -413,6 +454,13 @@ pub struct PackingView {
     pub has_weapon: bool,
     pub meals: u32,
     pub water: u32,
+    /// What you know the place calls for (only what has been seen there).
+    pub needs: Vec<NeedView>,
+    /// You have not been there before.
+    pub unvisited: bool,
+    /// Rooms seen / rooms in all, and rooms searched through.
+    pub rooms: u32,
+    pub rooms_searched: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -438,6 +486,8 @@ pub struct SellView {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ts", derive(TS))]
 pub struct BarterView {
+    /// Her side of it: she does not speak, she writes on a slate.
+    pub line: String,
     pub credit: u32,
     pub offers: Vec<OfferView>,
     pub sell: Vec<SellView>,
@@ -505,9 +555,22 @@ pub struct View {
     pub ledger: Option<Ledger>,
     /// Most recent last; at most `JOURNAL_IN_VIEW` entries.
     pub journal: Vec<Entry>,
-    /// Marks earned this run.
-    pub marks: Vec<String>,
+    /// Marks earned this run, named (hidden ones are revealed once earned).
+    pub marks: Vec<MarkEarned>,
     pub run: RunInfo,
+}
+
+/// A mark earned in this run.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS))]
+pub struct MarkEarned {
+    pub id: String,
+    pub name: String,
+    pub text: String,
+    pub icon: String,
+    pub tier: u8,
+    /// The profile did not hold it before this run.
+    pub new: bool,
 }
 
 pub const JOURNAL_IN_VIEW: usize = 80;
@@ -589,7 +652,7 @@ fn detail(d: &items::ItemDef) -> String {
             Some(f) => vec![format!("Burns {}", items::name(f).to_lowercase())],
             None => vec![format!("Lights {uses} dark room{}", if uses == 1 { "" } else { "s" })],
         },
-        ItemKind::Fuel { uses } => vec![format!("{uses} uses")],
+        ItemKind::Fuel { uses } => vec![journal::count(uses, "use", "uses")],
         ItemKind::Bag { capacity } => vec![format!("Carry +{}", kg(capacity))],
         ItemKind::Clothing {
             insulation,
@@ -606,7 +669,7 @@ fn detail(d: &items::ItemDef) -> String {
             }
             v
         }
-        ItemKind::Seed { days, .. } => vec![format!("Ready in about {days} days")],
+        ItemKind::Seed { days, .. } => vec![format!("Ready in about {}", journal::count(days, "day", "days"))],
         ItemKind::Comfort { nerve } => vec![format!("Nerve +{nerve}")],
         _ => vec![],
     };
@@ -740,7 +803,18 @@ fn describe(s: &GameState, a: &Action) -> (String, &'static str, String, bool) {
         Forage => ("Work along the bank".into(), "food", "herb".into(), false),
         Rest => ("Lie down for an hour".into(), "house", "rest".into(), false),
         ListenRadio => ("Listen to the wireless".into(), "house", "radio".into(), false),
-        GoToBed => ("Bar the door for the night".into(), "night", "cot".into(), false),
+        // Allowed from 18:00, an hour before dusk, so you can be in and barred
+        // before they wake. Say so, rather than look like a mistake.
+        GoToBed => (
+            if !s.is_dark() && s.time_of_day() >= 18 * 60 {
+                "Bar the door early, before dusk".into()
+            } else {
+                "Bar the door for the night".into()
+            },
+            "night",
+            "cot".into(),
+            false,
+        ),
         PlanTrip { place } => {
             let p = places::get(place);
             (
@@ -1108,11 +1182,7 @@ fn codex_view(s: &GameState) -> CodexView {
             let entries: Vec<CodexEntryView> = codex::CODEX
                 .iter()
                 .filter(|c| c.kind == *k && s.codex.contains(c.id))
-                .map(|c| CodexEntryView {
-                    id: c.id.to_string(),
-                    title: c.title.to_string(),
-                    text: c.text.to_string(),
-                })
+                .map(CodexEntryView::of)
                 .collect();
             CodexSection {
                 kind: *k,
@@ -1184,6 +1254,74 @@ fn site_view(s: &GameState) -> Option<SiteView> {
     })
 }
 
+/// What the place is known to need, from rooms already seen there.
+fn packing_needs(s: &GameState, p: &places::PlaceDef) -> Vec<NeedView> {
+    let mut v = Vec::new();
+    let Some(ps) = s.places.get(p.id) else { return v };
+    // The first door is always seen; the rest once entered (or the door beyond).
+    let seen = |i: usize| {
+        i == 0 || ps.rooms.get(i).is_some_and(|r| r.entered) || ps.rooms.get(i - 1).is_some_and(|r| r.entered)
+    };
+    let pack_has =
+        |pred: &dyn Fn(&ItemKind) -> bool| s.pack.keys().any(|id| items::get(id).is_some_and(|d| pred(&d.kind)));
+    let mut need = |id: &str, text: &str, icon: &str, met: bool| {
+        v.push(NeedView {
+            id: id.into(),
+            text: text.into(),
+            icon: icon.into(),
+            met,
+        })
+    };
+    let rooms: Vec<(usize, &places::RoomDef)> = p.rooms.iter().enumerate().filter(|(i, _)| seen(*i)).collect();
+    if rooms
+        .iter()
+        .any(|(i, r)| r.dark && ps.rooms[*i].search != SearchState::Full)
+    {
+        need(
+            "light",
+            "Dark rooms. A light.",
+            "light",
+            pack_has(&|k| matches!(k, ItemKind::Light { .. })),
+        );
+    }
+    let locked: Vec<&places::Lock> = rooms
+        .iter()
+        .filter(|(i, _)| !ps.rooms[*i].unlocked)
+        .filter_map(|(_, r)| r.lock.as_ref())
+        .collect();
+    if !locked.is_empty() {
+        let key = locked
+            .iter()
+            .filter_map(|l| l.key)
+            .any(|k| crate::state::inv_count(&s.pack, k) > 0);
+        let picks = locked.iter().any(|l| l.pick.is_some()) && crate::state::inv_count(&s.pack, "lockpicks") > 0;
+        let force = ["crowbar", "hatchet", "hammer"]
+            .iter()
+            .any(|t| crate::state::inv_count(&s.pack, t) > 0);
+        need(
+            "lock",
+            "A locked door. The key, picks, or something to force it.",
+            "lock",
+            key || picks || force,
+        );
+    }
+    if rooms
+        .iter()
+        .any(|(i, r)| r.flooded && ps.rooms[*i].search != SearchState::Full)
+    {
+        need("flooded", "Flooded rooms. Waders.", "water", inventory::waders(s));
+    }
+    if rooms.iter().any(|(_, r)| r.danger >= 2) || ps.rooms.iter().any(|r| !r.foes.is_empty()) {
+        need(
+            "weapon",
+            "They are there. Something to strike with.",
+            "blade",
+            s.pack.keys().any(|id| items::weapon(id).is_some()),
+        );
+    }
+    v
+}
+
 fn location(s: &GameState) -> String {
     match (&s.trip, s.phase) {
         (None, Phase::Packing) => "The lock house, packing.".into(),
@@ -1205,6 +1343,11 @@ fn location(s: &GameState) -> String {
             }
         }
     }
+}
+
+fn dark_at(minute: u32) -> bool {
+    let t = minute % crate::state::DAY;
+    !(crate::state::DAWN..DUSK).contains(&t)
 }
 
 pub fn view(s: &GameState) -> View {
@@ -1277,6 +1420,24 @@ pub fn view(s: &GameState) -> View {
             at_home: e.at_home,
             dark: s.is_dark() || !expedition::is_lit(s),
             log: e.log.clone(),
+            weapon: inventory::melee(s).map_or("bare hands".to_string(), |(id, _)| items::name(id).to_string()),
+            gun: s
+                .inv()
+                .keys()
+                .find(|id| items::weapon(id).is_some_and(|w| w.ammo.is_some()))
+                .map(|id| items::name(id).to_string()),
+            ammo: s
+                .inv()
+                .keys()
+                .filter_map(|id| items::weapon(id).and_then(|w| w.ammo))
+                .next()
+                .map_or(0, |a| crate::state::inv_count(s.inv(), a)),
+            ammo_name: s
+                .inv()
+                .keys()
+                .filter_map(|id| items::weapon(id).and_then(|w| w.ammo))
+                .next()
+                .map(|a| items::name(a).to_string()),
         });
     let event = if s.phase == Phase::Event {
         crate::systems::events::current(s).map(|def| EventView {
@@ -1316,6 +1477,12 @@ pub fn view(s: &GameState) -> View {
             has_weapon: s.pack.keys().any(|id| items::weapon(id).is_some()),
             meals: inventory::meal_count(&s.pack),
             water: inventory::water_count(&s.pack),
+            needs: packing_needs(s, p),
+            unvisited: s.places.get(p.id).is_none_or(|ps| !ps.visited),
+            rooms: p.rooms.len() as u32,
+            rooms_searched: s.places.get(p.id).map_or(0, |ps| {
+                ps.rooms.iter().filter(|r| r.search == SearchState::Full).count() as u32
+            }),
         })
     } else {
         None
@@ -1329,10 +1496,10 @@ pub fn view(s: &GameState) -> View {
                 homeward: s.homeward,
                 minutes: m,
                 hurry_minutes: expedition::walk_minutes(s, true),
-                arrive_dark: {
-                    let arr = (s.minute + m) % crate::state::DAY;
-                    !(crate::state::DAWN..DUSK).contains(&arr)
-                },
+                arrive_dark: dark_at(s.minute + m),
+                arrive_at: journal::clock(s.minute + m),
+                hurry_arrive_at: journal::clock(s.minute + expedition::walk_minutes(s, true)),
+                hurry_arrive_dark: dark_at(s.minute + expedition::walk_minutes(s, true)),
             }
         })
     } else {
@@ -1340,6 +1507,16 @@ pub fn view(s: &GameState) -> View {
     };
     let barter_view = if s.phase == Phase::Barter {
         Some(BarterView {
+            line: if s.widow.credit > 0 {
+                format!(
+                    "The slate reads {}. She waits. What is left on it when you go is lost: no change.",
+                    s.widow.credit
+                )
+            } else if s.widow.trades == 0 {
+                "She writes on her slate: TRADE. NO CHANGE. Then she waits.".to_string()
+            } else {
+                "She wipes her slate and waits. Sell first; she chalks what it is worth.".to_string()
+            },
             credit: s.widow.credit,
             offers: s
                 .widow
@@ -1402,7 +1579,7 @@ pub fn view(s: &GameState) -> View {
     let season_note = if s.frozen {
         "The river is frozen.".to_string()
     } else if let Some(n) = freeze_in {
-        format!("The river closes in about {n} days.")
+        format!("The river closes in about {}.", journal::count(n, "day", "days"))
     } else {
         "The river will freeze. You do not know when.".to_string()
     };
@@ -1497,11 +1674,25 @@ pub fn view(s: &GameState) -> View {
                     icon: items::get(p).map_or("part", |d| d.icon).to_string(),
                     installed: s.ferry.contains(*p),
                     in_store: crate::state::inv_count(&s.store, p) > 0,
+                    need: if s.ferry.contains(*p) {
+                        None
+                    } else if crate::state::inv_count(&s.store, p) > 0 {
+                        Some(match home::can_install(s, p) {
+                            Ok(()) => "In the store. Fit it.".to_string(),
+                            Err(why) => why,
+                        })
+                    } else {
+                        Some(objectives::where_part(s, p))
+                    },
                 })
                 .collect(),
             installed: s.ferry.len() as u32,
             ready: s.ferry.len() == 4 && !s.frozen,
             frozen: s.frozen,
+            meals: inventory::meal_count(&s.store),
+            meals_need: home::VOYAGE_MEALS,
+            water: crate::state::inv_count(&s.store, "water_clean"),
+            water_need: home::VOYAGE_WATER,
         },
         packing,
         travel,
@@ -1517,7 +1708,19 @@ pub fn view(s: &GameState) -> View {
         }),
         ledger: s.ledger.clone(),
         journal: s.journal.iter().rev().take(JOURNAL_IN_VIEW).rev().cloned().collect(),
-        marks: s.marks.iter().cloned().collect(),
+        marks: s
+            .marks
+            .iter()
+            .filter_map(|id| crate::content::marks::get(id))
+            .map(|m| MarkEarned {
+                id: m.id.to_string(),
+                name: m.name.to_string(),
+                text: m.text.to_string(),
+                icon: m.icon.to_string(),
+                tier: m.tier,
+                new: !s.held_marks.contains(m.id),
+            })
+            .collect(),
         run: RunInfo {
             seed: s.seed,
             difficulty: s.difficulty,

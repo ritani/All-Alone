@@ -165,6 +165,11 @@ pub enum GameEvent {
     Mark {
         id: String,
         new: bool,
+        /// The mark's name and line, revealed now even if it was hidden.
+        name: String,
+        text: String,
+        icon: String,
+        tier: u8,
     },
     RunEnded {
         kind: EndKind,
@@ -845,6 +850,17 @@ pub fn dispatch(s: &mut GameState, a: &Action) -> Result<Outcome, GameError> {
     apply(s, &mut out, a, inf);
     crate::systems::check_death(s, &mut out);
     crate::meta::award_marks(s, &mut out);
+    Ok(out)
+}
+
+/// Give the run up. It ends as a death ("Gave up"), with its ledger, so it is
+/// scored and can be entered in the profile once like any other run.
+pub fn forfeit(s: &mut GameState) -> Result<Outcome, GameError> {
+    if s.ended() {
+        return Err(GameError::new("run_over", "The run is over."));
+    }
+    let mut out = Outcome::default();
+    crate::systems::forfeit(s, &mut out);
     Ok(out)
 }
 

@@ -197,4 +197,47 @@ describe('store', () => {
     await store.flush();
     expect(store.get().notices.some((n) => n.includes('out of room'))).toBe(true);
   });
+
+  it('gives up a run in progress properly when beginning again', async () => {
+    const storage = memoryStore();
+    const store = makeStore(storage);
+    await store.boot();
+    store.startRun({ difficulty: 'still', background: 'clerk', keepsake: null });
+    store.beginPlay();
+    const water = store.get().view?.actions.find((a) => a.action.type === 'draw_water' && a.enabled);
+    await store.act(water!.action);
+    expect(store.get().profile?.totals.runs).toBe(0);
+    // Beginning again ends the old run as given up, and records it once.
+    store.startRun({ difficulty: 'still', background: 'clerk', keepsake: null });
+    await store.flush();
+    const p = store.get().profile!;
+    expect(p.totals.runs).toBe(1);
+    expect(p.totals.deaths).toBe(1);
+    expect(p.best[0]?.cause).toBe('Gave up');
+    expect(store.get().screen).toBe('intro');
+    expect(store.get().hasRun).toBe(true);
+    // A daily status query does not start the river.
+    expect(store.dailyStatus()?.attempted).toBe(false);
+    store.startDaily();
+    await store.flush();
+    expect(store.get().profile?.totals.runs).toBe(2);
+    expect(store.dailyStatus()?.attempted).toBe(true);
+  });
+
+  it('names a mark when it is earned and tracks unread codex finds', async () => {
+    const storage = memoryStore();
+    const store = makeStore(storage, 11);
+    await store.boot();
+    store.startRun({ difficulty: 'quiet', background: 'clerk', keepsake: null });
+    store.beginPlay();
+    await playToEnd(store, 5, 3000);
+    const s = store.get();
+    const marks = s.toasts.filter((t) => t.title.startsWith('Mark.'));
+    for (const m of marks) expect(m.title).not.toContain('hidden');
+    const unread = s.codexUnread;
+    if (unread.length > 0) {
+      store.markRead(unread[0]!);
+      expect(store.get().codexUnread).not.toContain(unread[0]);
+    }
+  });
 });

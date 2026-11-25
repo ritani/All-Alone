@@ -327,7 +327,14 @@ pub fn new_day(s: &mut GameState, j: &mut Journal) {
         if n > 0 {
             let id = if barrel >= 2 { "water_clean" } else { "water_dirty" };
             crate::state::inv_add(&mut s.store, id, n);
-            journal::plain(s, j, &format!("The barrel has caught {n} measures of rain."));
+            journal::plain(
+                s,
+                j,
+                &format!(
+                    "The barrel has caught {} of rain.",
+                    journal::count(n, "measure", "measures")
+                ),
+            );
         }
     }
     food::dawn(s, j);

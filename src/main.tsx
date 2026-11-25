@@ -4,6 +4,7 @@ import './ui/styles/base.css';
 import './ui/styles/components.css';
 import './ui/styles/screens.css';
 import './ui/styles/game.css';
+import './ui/styles/expedition.css';
 import { App } from './ui/App';
 
 const root = document.getElementById('app');

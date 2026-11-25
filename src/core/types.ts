@@ -16,7 +16,11 @@ export type GameError = { code: string, message: string, };
 
 export type Action = { "type": "use", item: string, } | { "type": "build", station: Station, } | { "type": "craft", recipe: string, } | { "type": "repair_barricade" } | { "type": "feed_stove" } | { "type": "draw_water" } | { "type": "forage" } | { "type": "rest" } | { "type": "listen_radio" } | { "type": "go_to_bed" } | { "type": "plan_trip", place: string, } | { "type": "set_snares" } | { "type": "check_snares" } | { "type": "set_line" } | { "type": "check_line" } | { "type": "plant", seed: string, } | { "type": "tend_garden" } | { "type": "harvest" } | { "type": "feed_dog" } | { "type": "install_part", part: string, } | { "type": "cast_off" } | { "type": "walk_onto_ice" } | { "type": "pack", item: string, qty: number, } | { "type": "unpack", item: string, qty: number, } | { "type": "take_dog", take: boolean, } | { "type": "depart" } | { "type": "cancel_trip" } | { "type": "walk", hurry: boolean, } | { "type": "turn_back" } | { "type": "enter", quiet: boolean, } | { "type": "back" } | { "type": "leave" } | { "type": "search", careful: boolean, } | { "type": "light_up" } | { "type": "pick_lock" } | { "type": "force_lock" } | { "type": "use_key" } | { "type": "take", item: string, qty: number, } | { "type": "take_all" } | { "type": "drop", item: string, qty: number, } | { "type": "ambush" } | { "type": "trade" } | { "type": "strike" } | { "type": "shoot" } | { "type": "shove" } | { "type": "back_away" } | { "type": "hold_still" } | { "type": "flee" } | { "type": "throw", item: string, } | { "type": "choose", option: number, } | { "type": "sell", item: string, qty: number, } | { "type": "buy", item: string, } | { "type": "end_trade" } | { "type": "sleep", watch: boolean, } | { "type": "get_up" } | { "type": "rise" };
 
-export type GameEvent = { "type": "found", item: string, qty: number, } | { "type": "lost", item: string, qty: number, } | { "type": "hurt", amount: number, } | { "type": "wounded", bleeding: boolean, infected: boolean, } | { "type": "sick" } | { "type": "vital_low", vital: VitalKind, } | { "type": "kill", kind: Creature | null, } | { "type": "shot" } | { "type": "noise", amount: number, total: number, } | { "type": "encounter_started" } | { "type": "encounter_over" } | { "type": "event_started", id: string, } | { "type": "codex", id: string, kind: CodexKind, } | { "type": "place_found", place: string, } | { "type": "built", station: Station, level: number, } | { "type": "crafted", recipe: string, } | { "type": "skill_up", skill: Skill, level: number, } | { "type": "night_visit", visitors: number, breached: boolean, } | { "type": "dawn", day: number, } | { "type": "dusk" } | { "type": "freeze" } | { "type": "dog_joined" } | { "type": "dog_lost", dead: boolean, } | { "type": "part_installed", part: string, } | { "type": "mark", id: string, new: boolean, } | { "type": "run_ended", kind: EndKind, };
+export type GameEvent = { "type": "found", item: string, qty: number, } | { "type": "lost", item: string, qty: number, } | { "type": "hurt", amount: number, } | { "type": "wounded", bleeding: boolean, infected: boolean, } | { "type": "sick" } | { "type": "vital_low", vital: VitalKind, } | { "type": "kill", kind: Creature | null, } | { "type": "shot" } | { "type": "noise", amount: number, total: number, } | { "type": "encounter_started" } | { "type": "encounter_over" } | { "type": "event_started", id: string, } | { "type": "codex", id: string, kind: CodexKind, } | { "type": "place_found", place: string, } | { "type": "built", station: Station, level: number, } | { "type": "crafted", recipe: string, } | { "type": "skill_up", skill: Skill, level: number, } | { "type": "night_visit", visitors: number, breached: boolean, } | { "type": "dawn", day: number, } | { "type": "dusk" } | { "type": "freeze" } | { "type": "dog_joined" } | { "type": "dog_lost", dead: boolean, } | { "type": "part_installed", part: string, } | { "type": "mark", id: string, new: boolean, 
+/**
+ * The mark's name and line, revealed now even if it was hidden.
+ */
+name: string, text: string, icon: string, tier: number, } | { "type": "run_ended", kind: EndKind, };
 
 export type Outcome = { journal: Array<Entry>, events: Array<GameEvent>, };
 
@@ -78,9 +82,9 @@ location: string, actions: Array<ActionView>, objectives: Array<Objective>, inve
  */
 journal: Array<Entry>, 
 /**
- * Marks earned this run.
+ * Marks earned this run, named (hidden ones are revealed once earned).
  */
-marks: Array<string>, run: RunInfo, };
+marks: Array<MarkEarned>, run: RunInfo, };
 
 export type ActionView = { 
 /**
@@ -168,7 +172,7 @@ export type MapView = { nodes: Array<MapNode>, paths: Array<[string, string]>,
  */
 known: number, total: number, };
 
-export type CodexEntryView = { id: string, title: string, text: string, };
+export type CodexEntryView = { id: string, kind: CodexKind, title: string, text: string, icon: string, };
 
 export type CodexSection = { kind: CodexKind, name: string, icon: string, found: number, total: number, entries: Array<CodexEntryView>, };
 
@@ -182,9 +186,17 @@ next: number | null, effect: string, };
 
 export type DogView = { state: DogState, health: number, fed: number, with_you: boolean, line: string, };
 
-export type FerryPartView = { id: string, name: string, icon: string, installed: boolean, in_store: boolean, };
+export type FerryPartView = { id: string, name: string, icon: string, installed: boolean, in_store: boolean, 
+/**
+ * What it still needs, in one line; null once fitted.
+ */
+need: string | null, };
 
-export type FerryView = { parts: Array<FerryPartView>, installed: number, ready: boolean, frozen: boolean, };
+export type FerryView = { parts: Array<FerryPartView>, installed: number, ready: boolean, frozen: boolean, 
+/**
+ * Provisions for the voyage, put by in the store, and what it takes.
+ */
+meals: number, meals_need: number, water: number, water_need: number, };
 
 export type PlotView = { crop: string, name: string, growth: number, need: number, ready: boolean, };
 
@@ -214,7 +226,15 @@ export type EncounterView = { foes: Array<FoeView>, turn: number, gripped: boole
 /**
  * What happened in the last exchange.
  */
-log: Array<string>, };
+log: Array<string>, 
+/**
+ * What you would strike with ("bare hands" without a weapon).
+ */
+weapon: string, 
+/**
+ * A gun you carry, loaded or not, and its rounds.
+ */
+gun: string | null, ammo: number, ammo_name: string | null, };
 
 export type OptionView = { index: number, label: string, enabled: boolean, reason: string | null, odds: number | null, minutes: number, };
 
@@ -224,21 +244,49 @@ export type TravelView = { place: string, name: string, homeward: boolean, minut
 /**
  * You will arrive after dusk if you walk.
  */
-arrive_dark: boolean, };
+arrive_dark: boolean, 
+/**
+ * Clock time on arrival, walking and hurrying ("HH:MM").
+ */
+arrive_at: string, hurry_arrive_at: string, hurry_arrive_dark: boolean, };
 
-export type PackingView = { place: string, name: string, minutes: number, take_dog: boolean, has_light: boolean, has_weapon: boolean, meals: number, water: number, };
+export type PackingView = { place: string, name: string, minutes: number, take_dog: boolean, has_light: boolean, has_weapon: boolean, meals: number, water: number, 
+/**
+ * What you know the place calls for (only what has been seen there).
+ */
+needs: Array<NeedView>, 
+/**
+ * You have not been there before.
+ */
+unvisited: boolean, 
+/**
+ * Rooms seen / rooms in all, and rooms searched through.
+ */
+rooms: number, rooms_searched: number, };
 
 export type OfferView = { item: string, name: string, icon: string, qty: number, price: number, };
 
 export type SellView = { item: string, name: string, icon: string, qty: number, price: number, };
 
-export type BarterView = { credit: number, offers: Array<OfferView>, sell: Array<SellView>, trades: number, };
+export type BarterView = { 
+/**
+ * Her side of it: she does not speak, she writes on a slate.
+ */
+line: string, credit: number, offers: Array<OfferView>, sell: Array<SellView>, trades: number, };
 
 export type EndingView = { kind: EndKind, cause: string, text: string, };
 
 export type RunInfo = { seed: number, difficulty: Difficulty, difficulty_name: string, background: string, background_name: string, keepsake: string | null, daily: string | null, nights: number, kills: number, };
 
-export type Ledger = { seed: number, difficulty: Difficulty, background: string, daily: string | null, end: EndKind, cause: string, text: string, days: number, nights: number, places_found: number, places_total: number, noise_total: number, kills: number, shots: number, metres: number, parts: number, stations: number, dog: boolean, codex: Array<string>, marks: Array<string>, lines: Array<ScoreLine>, score: number, remnants: number, };
+export type Ledger = { seed: number, difficulty: Difficulty, background: string, daily: string | null, end: EndKind, cause: string, text: string, days: number, nights: number, 
+/**
+ * Places that were not known at the start and were learned of.
+ */
+places_found: number, places_total: number, 
+/**
+ * Places actually reached, of every place in the valley.
+ */
+places_visited: number, places_all: number, noise_total: number, kills: number, shots: number, metres: number, parts: number, stations: number, dog: boolean, codex: Array<string>, marks: Array<string>, lines: Array<ScoreLine>, score: number, remnants: number, };
 
 export type ScoreLine = { label: string, points: number, };
 
@@ -296,4 +344,26 @@ export type KeepsakeView = { id: string, name: string, desc: string, unlocked: b
 
 export type DifficultyView = { id: Difficulty, name: string, blurb: string, score_pct: number, };
 
-export type ProfileView = { remnants: number, marks: Array<MarkView>, marks_earned: number, marks_total: number, backgrounds: Array<BackgroundView>, keepsakes: Array<KeepsakeView>, difficulties: Array<DifficultyView>, codex_found: number, codex_total: number, totals: Totals, best: Array<Ledger>, daily_streak: number, daily_best_streak: number, daily_results: Array<DailyResult>, };
+export type ProfileView = { remnants: number, marks: Array<MarkView>, marks_earned: number, marks_total: number, backgrounds: Array<BackgroundView>, keepsakes: Array<KeepsakeView>, difficulties: Array<DifficultyView>, codex_found: number, codex_total: number, 
+/**
+ * Every codex entry found in any run, in codex order.
+ */
+codex: Array<CodexEntryView>, totals: Totals, best: Array<Ledger>, daily_streak: number, daily_best_streak: number, daily_results: Array<DailyResult>, };
+
+export type DailyStatus = { date: string, 
+/**
+ * An attempt has been started (or finished) on this date.
+ */
+attempted: boolean, 
+/**
+ * The counted result, once the first attempt has ended.
+ */
+result: DailyResult | null, };
+
+export type MarkEarned = { id: string, name: string, text: string, icon: string, tier: number, 
+/**
+ * The profile did not hold it before this run.
+ */
+new: boolean, };
+
+export type NeedView = { id: string, text: string, icon: string, met: boolean, };

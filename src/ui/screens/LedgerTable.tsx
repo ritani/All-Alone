@@ -5,7 +5,8 @@ export function LedgerTable({ ledger: l }: { ledger: Ledger }) {
   const rows: [string, string | number][] = [
     ['Days', l.days],
     ['Nights survived', l.nights],
-    ['Places found', `${l.places_found}/${l.places_total}`],
+    ...(l.places_all > 0 ? ([['Places reached', `${l.places_visited}/${l.places_all}`]] as [string, string][]) : []),
+    ['Places learned of', `${l.places_found}/${l.places_total}`],
     ['Noise made', l.noise_total],
     ['Killed', l.kills],
     ['Shots fired', l.shots],

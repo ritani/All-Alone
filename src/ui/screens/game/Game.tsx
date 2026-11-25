@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Action, ProfileView, View } from '../../../core';
+import { Button } from '../../components/Button';
+import { Sheet } from '../../components/Sheet';
 import { TabBar, type Tab } from '../../components/TabBar';
 import { CraftTab } from './CraftTab';
 import { Header } from './Header';
@@ -9,6 +11,7 @@ import { MapTab } from './MapTab';
 import { NotesTab } from './NotesTab';
 import { Objectives } from './Objectives';
 import { DawnPage, EventPanel, FallbackPanel, NightPanel } from './Phases';
+import { BarterPanel, EncounterPanel, PackingPanel, SitePanel, TravelPanel } from './Expedition';
 import { StoreTab } from './StoreTab';
 
 type TabId = 'house' | 'store' | 'craft' | 'map' | 'notes';
@@ -20,9 +23,24 @@ export interface GameProps {
   seq: number;
   onAct: (a: Action) => void;
   onMenu: () => void;
+  /** Codex entries found and not yet opened. */
+  unread?: readonly string[];
+  onRead?: (id: string) => void;
 }
 
-function HomePanel({ tab, view, profile, onAct }: { tab: TabId; view: View; profile: ProfileView | null; onAct: (a: Action) => void }) {
+function HomePanel({
+  tab,
+  view,
+  onAct,
+  unread,
+  onRead,
+}: {
+  tab: TabId;
+  view: View;
+  onAct: (a: Action) => void;
+  unread: readonly string[];
+  onRead: (id: string) => void;
+}) {
   switch (tab) {
     case 'house':
       return <HouseTab view={view} onAct={onAct} />;
@@ -33,19 +51,37 @@ function HomePanel({ tab, view, profile, onAct }: { tab: TabId; view: View; prof
     case 'map':
       return <MapTab view={view} onAct={onAct} />;
     case 'notes':
-      return <NotesTab view={view} profile={profile} onAct={onAct} />;
+      return <NotesTab view={view} onAct={onAct} unread={unread} onRead={onRead} />;
   }
 }
 
 /** The game frame: header, journal, objectives, then the phase's panel. */
-export function Game({ view, profile, fresh, seq, onAct, onMenu }: GameProps) {
+/** Actions that end the run: asked about once more before they are sent. */
+const FINAL: Partial<Record<Action['type'], { title: string; text: string; go: string }>> = {
+  cast_off: {
+    title: 'Cast off',
+    text: 'Leave Calder’s Reach on the Kittiwake. The run ends here, and the ledger is written.',
+    go: 'Cast off',
+  },
+  walk_onto_ice: {
+    title: 'Onto the ice',
+    text: 'Walk out onto the frozen river and do not come back. The run ends here, and the ledger is written.',
+    go: 'Walk out',
+  },
+};
+
+export function Game({ view, fresh, seq, onAct: send, onMenu, unread = [], onRead = () => undefined }: GameProps) {
   const [tab, setTab] = useState<TabId>('house');
+  const [confirm, setConfirm] = useState<Action | null>(null);
+  const onAct = (a: Action) => (FINAL[a.type] ? setConfirm(a) : send(a));
+  const final = confirm ? FINAL[confirm.type] : undefined;
   const panel = useRef<HTMLDivElement>(null);
 
   // A new tab starts at its top.
+  const room = view.site?.room?.index ?? -1;
   useEffect(() => {
     if (panel.current) panel.current.scrollTop = 0;
-  }, [tab, view.phase]);
+  }, [tab, view.phase, room]);
 
   const home = view.phase === 'home';
   const tabs: Tab<TabId>[] = [
@@ -53,13 +89,13 @@ export function Game({ view, profile, fresh, seq, onAct, onMenu }: GameProps) {
     { id: 'store', label: 'Store', icon: 'store' },
     { id: 'craft', label: 'Craft', icon: 'workbench' },
     { id: 'map', label: 'Map', icon: 'map' },
-    { id: 'notes', label: 'Notes', icon: 'journal' },
+    { id: 'notes', label: 'Notes', icon: 'journal', flag: unread.length > 0, quiet: true },
   ];
 
   let body;
   switch (view.phase) {
     case 'home':
-      body = <HomePanel tab={tab} view={view} profile={profile} onAct={onAct} />;
+      body = <HomePanel tab={tab} view={view} onAct={onAct} unread={unread} onRead={onRead} />;
       break;
     case 'event':
       body = <EventPanel view={view} onAct={onAct} />;
@@ -69,6 +105,21 @@ export function Game({ view, profile, fresh, seq, onAct, onMenu }: GameProps) {
       break;
     case 'dawn':
       body = <DawnPage view={view} onAct={onAct} />;
+      break;
+    case 'packing':
+      body = view.packing ? <PackingPanel view={view} onAct={onAct} /> : <FallbackPanel view={view} onAct={onAct} />;
+      break;
+    case 'travelling':
+      body = view.travel ? <TravelPanel view={view} onAct={onAct} /> : <FallbackPanel view={view} onAct={onAct} />;
+      break;
+    case 'site':
+      body = view.site ? <SitePanel view={view} onAct={onAct} /> : <FallbackPanel view={view} onAct={onAct} />;
+      break;
+    case 'encounter':
+      body = view.encounter ? <EncounterPanel view={view} onAct={onAct} /> : <FallbackPanel view={view} onAct={onAct} />;
+      break;
+    case 'barter':
+      body = view.barter ? <BarterPanel view={view} onAct={onAct} /> : <FallbackPanel view={view} onAct={onAct} />;
       break;
     default:
       body = <FallbackPanel view={view} onAct={onAct} />;
@@ -89,8 +140,9 @@ export function Game({ view, profile, fresh, seq, onAct, onMenu }: GameProps) {
         </div>
         <Header view={view} />
         <main class="game__main" aria-label="The game">
-          {view.phase !== 'dawn' && <Journal entries={view.journal} fresh={fresh} seq={seq} />}
-          {view.phase !== 'dawn' && <Objectives items={view.objectives} />}
+          {/* The dawn page and an encounter carry their own lines; the journal steps aside. */}
+          {view.phase !== 'dawn' && view.phase !== 'encounter' && <Journal entries={view.journal} fresh={fresh} seq={seq} />}
+          {view.phase !== 'dawn' && view.phase !== 'encounter' && <Objectives items={view.objectives} />}
           <div
             class={home ? 'game__panel' : 'game__panel game__panel--phase'}
             ref={panel}
@@ -103,6 +155,25 @@ export function Game({ view, profile, fresh, seq, onAct, onMenu }: GameProps) {
           </div>
         </main>
         {home && <TabBar tabs={tabs} current={tab} onChange={setTab} label="The lock house" idBase="home" />}
+        {confirm && final && (
+          <Sheet title={final.title} onClose={() => setConfirm(null)}>
+            <p class="prose">{final.text}</p>
+            <div class="sheet__actions">
+              <Button
+                block
+                onClick={() => {
+                  setConfirm(null);
+                  send(confirm);
+                }}
+              >
+                {final.go}
+              </Button>
+              <Button block variant="quiet" onClick={() => setConfirm(null)}>
+                Not yet
+              </Button>
+            </div>
+          </Sheet>
+        )}
       </div>
     </div>
   );

@@ -222,6 +222,16 @@ fn part_place(part: &str) -> Option<&'static str> {
         .map(|p| p.id)
 }
 
+/// Whether a place still holds a ferry part the bot lacks.
+fn holds_missing_part(s: &GameState, place: &str) -> bool {
+    places::get(place).is_some_and(|p| {
+        p.rooms
+            .iter()
+            .flat_map(|r| r.fixed)
+            .any(|(id, _)| partish(id) && !have_part(s, part_of(id)))
+    })
+}
+
 fn have_part(s: &GameState, part: &str) -> bool {
     s.ferry.contains(part) || inv_count(&s.store, part) > 0 || inv_count(&s.pack, part) > 0
 }
@@ -591,7 +601,7 @@ fn part_of(id: &str) -> &str {
 fn hinted(s: &GameState, id: &str) -> bool {
     let hints: &[&str] = match id {
         "hull_patch" => &["note_lowe", "note_sluice", "radio_boatyard"],
-        "coil_cracked" => &["note_lowe", "note_pell"],
+        "coil_cracked" => &["note_lowe", "note_pell", "note_tow_ticket"],
         "belting" => &["note_lowe", "note_engineer"],
         "fuel_drum" => &[
             "note_mill_ledger",
@@ -890,7 +900,17 @@ fn event(s: &GameState) -> Action {
                     )
                 )
             });
+            // A lead to a ferry part is worth some danger, when fit for it.
+            let lead = o.ok.fx.iter().any(|f| match f {
+                Fx::Codex(c) => all_alone_core::content::codex::get(c)
+                    .and_then(|d| d.reveals)
+                    .is_some_and(|p| !s.places[p].known && holds_missing_part(s, p)),
+                _ => false,
+            });
             let mut score = 0;
+            if lead && pts(s, VitalKind::Health) >= 60 {
+                score += 40;
+            }
             if risky {
                 score -= 20;
             }

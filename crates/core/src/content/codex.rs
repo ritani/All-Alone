@@ -165,6 +165,13 @@ pub static CODEX: &[CodexDef] = &[
         ..C
     },
     CodexDef {
+        id: "note_tow_ticket",
+        title: "Tow ticket book",
+        text: "Pell's Garage, past Quarry Lane. Breakdown and recovery, day or night. The last ticket: from Lowe's yard, one spark coil off the ferry, for rewinding. Kept in the pit until paid for.",
+        reveals: Some("garage"),
+        ..C
+    },
+    CodexDef {
         id: "note_wharfinger",
         title: "Wharfinger's ledger",
         text: "Last barge down to the estuary Friday. Skipper says the hum is in the water too, all the way to the sea, but weaker. He would not tie up overnight. Fuel drums in the store for Wren, paid.",
@@ -299,7 +306,7 @@ pub static CODEX: &[CodexDef] = &[
         title: "A mechanic's question",
         text: "A man asking anyone near Calder's Reach whether Pell's garage still stands, because his engine parts are there. Nobody answers him.",
         reveals: Some("garage"),
-        day: 24,
+        day: 29,
         radio: 2,
     },
     CodexDef {

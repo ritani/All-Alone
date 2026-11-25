@@ -17,8 +17,10 @@ use crate::systems::encounter::MAX_FOES;
 
 pub const RUN_FORMAT: &str = "all-alone/run";
 pub const PROFILE_FORMAT: &str = "all-alone/profile";
-pub const RUN_VERSION: u32 = 1;
-pub const PROFILE_VERSION: u32 = 1;
+/// 2: ledgers carry `places_visited` and `places_all`.
+pub const RUN_VERSION: u32 = 2;
+/// 2: ledgers carry `places_visited` and `places_all`.
+pub const PROFILE_VERSION: u32 = 2;
 pub const MAX_RUN_BYTES: usize = 768 * 1024;
 pub const MAX_PROFILE_BYTES: usize = 256 * 1024;
 
@@ -63,11 +65,41 @@ pub fn save_to_string(s: &GameState) -> String {
     wrap(RUN_FORMAT, RUN_VERSION, s)
 }
 
+/// Version 1 ledgers did not record places visited. `places_all: 0` marks the
+/// figure as unknown (the view leaves it out); a run's own ledger can be filled
+/// in from its places.
+fn ledger_v1_to_v2(ledger: &mut Value, visited: Option<u64>) -> Result<(), GameError> {
+    let Some(obj) = ledger.as_object_mut() else {
+        return Err(err("The save does not fit: ledger."));
+    };
+    let (v, all) = match visited {
+        Some(v) => (v, places::PLACES.len() as u64),
+        None => (0, 0),
+    };
+    obj.insert("places_visited".into(), Value::from(v));
+    obj.insert("places_all".into(), Value::from(all));
+    Ok(())
+}
+
 /// Bring an older run save's data up to the current version.
-pub fn migrate_run(version: u32, data: Value) -> Result<Value, GameError> {
+pub fn migrate_run(version: u32, mut data: Value) -> Result<Value, GameError> {
     match version {
         RUN_VERSION => Ok(data),
-        0 => Err(err("Unknown save version.")),
+        1 => {
+            let visited = data
+                .get("places")
+                .and_then(Value::as_object)
+                .map(|ps| {
+                    ps.values()
+                        .filter(|p| p.get("visited").and_then(Value::as_bool) == Some(true))
+                        .count() as u64
+                })
+                .unwrap_or(0);
+            if let Some(l) = data.get_mut("ledger").filter(|l| !l.is_null()) {
+                ledger_v1_to_v2(l, Some(visited))?;
+            }
+            Ok(data)
+        }
         v if v > RUN_VERSION => Err(err("This save is from a newer version of the game.")),
         _ => Err(err("Unknown save version.")),
     }
@@ -87,9 +119,17 @@ pub fn profile_to_string(p: &Profile) -> String {
     wrap(PROFILE_FORMAT, PROFILE_VERSION, p)
 }
 
-pub fn migrate_profile(version: u32, data: Value) -> Result<Value, GameError> {
+pub fn migrate_profile(version: u32, mut data: Value) -> Result<Value, GameError> {
     match version {
         PROFILE_VERSION => Ok(data),
+        1 => {
+            if let Some(best) = data.get_mut("best").and_then(Value::as_array_mut) {
+                for l in best {
+                    ledger_v1_to_v2(l, None)?;
+                }
+            }
+            Ok(data)
+        }
         v if v > PROFILE_VERSION => Err(err("This profile is from a newer version of the game.")),
         _ => Err(err("Unknown profile version.")),
     }
@@ -373,7 +413,7 @@ mod tests {
     #[test]
     fn newer_version_rejected() {
         let s = game();
-        let text = save_to_string(&s).replacen("\"version\":1", "\"version\":2", 1);
+        let text = save_to_string(&s).replacen("\"version\":2", "\"version\":3", 1);
         assert!(load_from_string(&text).is_err());
     }
 }

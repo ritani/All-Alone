@@ -1,62 +1,202 @@
 import { useState } from 'preact/hooks';
-import type { Action, ProfileView, View } from '../../../core';
+import type { Action, CodexEntryView, View } from '../../../core';
 import { ActionList } from '../../components/ActionButton';
 import { Hairline } from '../../components/Hairline';
 import { Icon } from '../../components/Icon';
 import { Rule } from '../../components/Rule';
+import { Sheet } from '../../components/Sheet';
 
 const DOG_STATES: Record<string, string> = {
   unmet: 'Not met',
-  following: 'Following',
-  companion: 'With you',
+  following: 'Hanging about',
+  companion: 'Yours',
   lost: 'Gone',
   dead: 'Dead',
 };
 
-export function NotesTab({ view, profile, onAct }: { view: View; profile: ProfileView | null; onAct: (a: Action) => void }) {
-  const [openSection, setOpenSection] = useState<string | null>(null);
-  const [openEntry, setOpenEntry] = useState<string | null>(null);
+/** One codex entry, read in a sheet. */
+export function CodexSheet({ entry, onClose }: { entry: CodexEntryView; onClose: () => void }) {
+  return (
+    <Sheet title={entry.title} onClose={onClose}>
+      <p class="label codex-sheet__kind">
+        <Icon name={entry.icon} size={16} /> {KIND_LABEL[entry.kind] ?? entry.kind}
+      </p>
+      <div class="codex__text prose">
+        {entry.text.split('\n').map((para, i) => (
+          <p key={i}>{para}</p>
+        ))}
+      </div>
+    </Sheet>
+  );
+}
+
+const KIND_LABEL: Record<string, string> = {
+  note: 'A note',
+  photograph: 'A photograph',
+  radio: 'Heard on the wireless',
+  field_guide: 'Field guide',
+};
+
+/** Codex sections with found/total; an entry opens in a sheet; unread ones are marked. */
+export function CodexList({
+  sections,
+  unread,
+  onRead,
+}: {
+  sections: { kind: string; name: string; icon: string; found: number; total: number; entries: CodexEntryView[] }[];
+  unread: readonly string[];
+  onRead: (id: string) => void;
+}) {
+  const [open, setOpen] = useState<CodexEntryView | null>(null);
+  return (
+    <>
+      {sections.map((sec) => {
+        const fresh = sec.entries.filter((e) => unread.includes(e.id)).length;
+        return (
+          <section key={sec.kind} class="codex-sec">
+            <div class="codex-sec__head">
+              <Icon name={sec.icon} size={20} />
+              <h3 class="codex-sec__name">{sec.name}</h3>
+              {fresh > 0 && <span class="label codex-sec__new">{fresh} new</span>}
+              <span class="num codex-sec__count">
+                {sec.found}/{sec.total}
+              </span>
+            </div>
+            <Hairline value={sec.found} max={sec.total} label={`${sec.name}: ${sec.found} of ${sec.total} found`} />
+            {sec.entries.length === 0 ? (
+              <p class="codex-sec__empty">Nothing yet.</p>
+            ) : (
+              <ul class="codex-sec__list">
+                {sec.entries.map((e) => {
+                  const isNew = unread.includes(e.id);
+                  return (
+                    <li key={e.id}>
+                      <button
+                        type="button"
+                        class={isNew ? 'codex-entry codex-entry--new' : 'codex-entry'}
+                        onClick={() => {
+                          setOpen(e);
+                          onRead(e.id);
+                        }}
+                      >
+                        <span class="codex-entry__title">{e.title}</span>
+                        {isNew && <span class="label codex-entry__new">New</span>}
+                        <Icon name="forward" size={16} />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        );
+      })}
+      {open && <CodexSheet entry={open} onClose={() => setOpen(null)} />}
+    </>
+  );
+}
+
+export function NotesTab({
+  view,
+  onAct,
+  unread,
+  onRead,
+}: {
+  view: View;
+  onAct: (a: Action) => void;
+  unread: readonly string[];
+  onRead: (id: string) => void;
+}) {
+  const ferry = view.ferry;
   const ferryActs = view.actions.filter((a) => a.group === 'ferry');
-  const markInfo = new Map((profile?.marks ?? []).map((m) => [m.id, m]));
+  const dog = view.dog;
   return (
     <>
       <section class="section">
         <Rule>The ferry</Rule>
         <div class="figure-line">
           <span class="label">
-            <Icon name="ferry" size={16} /> Parts fitted
+            <Icon name="ferry" size={16} /> The Kittiwake, parts fitted
           </span>
           <span class="num">
-            {view.ferry.installed}/{view.ferry.parts.length}
+            {ferry.installed}/{ferry.parts.length}
           </span>
         </div>
-        <Hairline value={view.ferry.installed} max={view.ferry.parts.length} steps label="Ferry parts fitted" />
+        <Hairline value={ferry.installed} max={ferry.parts.length} steps label="Ferry parts fitted" />
         <ul class="parts">
-          {view.ferry.parts.map((p) => (
+          {ferry.parts.map((p) => (
             <li key={p.id} class={p.installed ? 'part part--in' : p.in_store ? 'part part--held' : 'part'}>
               <Icon name={p.installed ? 'check' : p.icon} size={16} />
-              <span class="part__name">{p.name}</span>
+              <span class="part__body">
+                <span class="part__name">{p.name}</span>
+                {p.need && <span class="part__need">{p.need}</span>}
+              </span>
               <span class="part__state label">{p.installed ? 'Fitted' : p.in_store ? 'In the store' : 'Not found'}</span>
             </li>
           ))}
         </ul>
-        {view.ferry.frozen && <p class="prose danger-text">The river is frozen. The ferry will not go now.</p>}
+        <div class="voyage">
+          <p class="label voyage__head">For the voyage, two days to the estuary</p>
+          <div class="figure-line">
+            <span class="label">
+              <Icon name="food" size={16} /> Meals put by
+            </span>
+            <span class="num">
+              {Math.min(ferry.meals, ferry.meals_need)}/{ferry.meals_need}
+            </span>
+          </div>
+          <Hairline value={ferry.meals} max={ferry.meals_need} label="Meals put by for the voyage" />
+          <div class="figure-line">
+            <span class="label">
+              <Icon name="water" size={16} /> Clean water put by
+            </span>
+            <span class="num">
+              {Math.min(ferry.water, ferry.water_need)}/{ferry.water_need}
+            </span>
+          </div>
+          <Hairline value={ferry.water} max={ferry.water_need} label="Clean water put by for the voyage" />
+        </div>
+        {ferry.frozen && <p class="prose danger-text">The river is frozen. The ferry will not go now.</p>}
         {ferryActs.length > 0 && <ActionList actions={ferryActs} onAct={onAct} />}
       </section>
 
-      {view.dog && view.dog.state !== 'unmet' && (
+      {dog && dog.state !== 'unmet' && (
         <section class="section">
           <Rule>The dog</Rule>
-          <p class="prose">{view.dog.line}</p>
+          <p class="prose">{dog.line}</p>
           <div class="figure-line">
             <span class="label">
-              <Icon name="sigil_dog" size={16} /> {DOG_STATES[view.dog.state] ?? view.dog.state}
+              <Icon name="sigil_dog" size={16} /> {DOG_STATES[dog.state] ?? dog.state}
             </span>
-            <span class="num">health {view.dog.health} · fed {view.dog.fed}</span>
+            <span class="num">{dog.with_you ? 'with you' : ''}</span>
           </div>
-          <Hairline value={view.dog.health} max={100} label="The dog's health" danger={view.dog.health < 15} />
+          {(dog.state === 'companion' || dog.state === 'following') && (
+            <>
+              <div class="figure-line">
+                <span class="label">Health</span>
+                <span class="num">{dog.health}</span>
+              </div>
+              <Hairline value={dog.health} max={100} label="The dog's health" danger={dog.health < 15} />
+              <div class="figure-line">
+                <span class="label">Fed</span>
+                <span class="num">{dog.fed}</span>
+              </div>
+              <Hairline value={dog.fed} max={100} label="How well fed the dog is" danger={dog.fed <= 0} />
+            </>
+          )}
         </section>
       )}
+
+      <section class="section">
+        <Rule>What you have found</Rule>
+        <div class="figure-line">
+          <span class="label">The codex</span>
+          <span class="num">
+            {view.codex.found}/{view.codex.total}
+          </span>
+        </div>
+        <CodexList sections={view.codex.sections} unread={unread} onRead={onRead} />
+      </section>
 
       <section class="section">
         <Rule>Skills</Rule>
@@ -69,7 +209,7 @@ export function NotesTab({ view, profile, onAct }: { view: View; profile: Profil
                 </span>
                 <span class="num">{s.level}/5</span>
               </div>
-              <Hairline value={s.level} max={5} steps label={`${s.name} level`} />
+              <Hairline value={s.level} max={5} steps label={`${s.name} level ${s.level} of 5`} />
               {s.next !== null && (
                 <Hairline value={s.xp} max={s.next} label={`${s.name}, practice toward the next level`} />
               )}
@@ -79,78 +219,19 @@ export function NotesTab({ view, profile, onAct }: { view: View; profile: Profil
         </ul>
       </section>
 
-      <section class="section">
-        <Rule>Codex</Rule>
-        <div class="figure-line">
-          <span class="label">Found</span>
-          <span class="num">
-            {view.codex.found}/{view.codex.total}
-          </span>
-        </div>
-        <Hairline value={view.codex.found} max={view.codex.total} label="Codex found" />
-        <ul class="codex">
-          {view.codex.sections.map((sec) => {
-            const open = openSection === sec.kind;
-            return (
-              <li key={sec.kind} class="codex__section">
-                <button
-                  type="button"
-                  class="disclosure"
-                  aria-expanded={open}
-                  disabled={sec.entries.length === 0}
-                  onClick={() => setOpenSection(open ? null : sec.kind)}
-                >
-                  <Icon name={sec.icon} size={20} />
-                  <span class="disclosure__name">{sec.name}</span>
-                  <span class="num">
-                    {sec.found}/{sec.total}
-                  </span>
-                  <Icon name="down" size={16} class={open ? 'disclosure__icon disclosure__icon--open' : 'disclosure__icon'} />
-                </button>
-                {open && (
-                  <ul class="codex__entries">
-                    {sec.entries.map((e) => {
-                      const on = openEntry === e.id;
-                      return (
-                        <li key={e.id} class="codex__entry">
-                          <button type="button" class="codex__title" aria-expanded={on} onClick={() => setOpenEntry(on ? null : e.id)}>
-                            {e.title}
-                          </button>
-                          {on && (
-                            <div class="codex__text prose">
-                              {e.text.split('\n').map((para, i) => (
-                                <p key={i}>{para}</p>
-                              ))}
-                            </div>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-
       {view.marks.length > 0 && (
         <section class="section">
           <Rule>Marks this run</Rule>
           <ul class="marks">
-            {view.marks.map((id) => {
-              const m = markInfo.get(id);
-              const known = m && !(m.hidden && !m.earned);
-              return (
-                <li key={id} class="mark mark--earned">
-                  <Icon name={m?.icon ?? 'sigil_eye'} size={24} class="mark__sigil" />
-                  <div class="mark__body">
-                    <p class="mark__name">{known ? m.name : 'A hidden mark'}</p>
-                    {known && <p class="mark__text">{m.text}</p>}
-                  </div>
-                </li>
-              );
-            })}
+            {view.marks.map((m) => (
+              <li key={m.id} class="mark mark--earned">
+                <Icon name={m.icon} size={24} class="mark__sigil" />
+                <div class="mark__body">
+                  <p class="mark__name">{m.name}</p>
+                  <p class="mark__text">{m.text}</p>
+                </div>
+              </li>
+            ))}
           </ul>
         </section>
       )}

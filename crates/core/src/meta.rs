@@ -47,7 +47,9 @@ pub fn earned_in_run(s: &GameState, m: &MarkDef) -> bool {
         Earn::NotesFull => kind_full(s, CodexKind::Note),
         Earn::PhotosFull => kind_full(s, CodexKind::Photograph),
         Earn::RadioFull => kind_full(s, CodexKind::Radio),
-        Earn::DieOnDay(d) => s.ending.as_ref().is_some_and(|e| e.kind == EndKind::Death) && s.day() == d,
+        Earn::DieOnDay(d) => {
+            s.ending.as_ref().is_some_and(|e| e.kind == EndKind::Death) && s.day() == d && !s.has_flag("gave_up")
+        }
         Earn::Kills(n) => s.stats.kills >= n,
         Earn::AllPlaces => s.places.values().all(|p| p.known),
         Earn::AllStations(l) => Station::ALL.iter().all(|st| s.level(*st) >= l),
@@ -81,6 +83,10 @@ pub fn award_marks(s: &mut GameState, j: &mut Journal) {
             j.events.push(GameEvent::Mark {
                 id: m.id.to_string(),
                 new: !s.held_marks.contains(m.id),
+                name: m.name.to_string(),
+                text: m.text.to_string(),
+                icon: m.icon.to_string(),
+                tier: m.tier,
             });
         }
     }
@@ -115,8 +121,12 @@ pub struct Ledger {
     pub text: String,
     pub days: u32,
     pub nights: u32,
+    /// Places that were not known at the start and were learned of.
     pub places_found: u32,
     pub places_total: u32,
+    /// Places actually reached, of every place in the valley.
+    pub places_visited: u32,
+    pub places_all: u32,
     pub noise_total: u32,
     pub kills: u32,
     pub shots: u32,
@@ -155,7 +165,7 @@ pub fn ledger(s: &GameState) -> Ledger {
         }
     };
     add("Nights survived", s.stats.nights * 15);
-    add("Places found", places_found * 10);
+    add("Places learned of", places_found * 10);
     add("Codex", s.codex.len() as u32 * 4);
     add("Stations built", stations * 5);
     add("The Stilled put down", s.stats.kills * 2);
@@ -189,6 +199,8 @@ pub fn ledger(s: &GameState) -> Ledger {
         nights: s.stats.nights,
         places_found,
         places_total,
+        places_visited: s.places.values().filter(|p| p.visited).count() as u32,
+        places_all: places::PLACES.len() as u32,
         noise_total: s.stats.noise_total,
         kills: s.stats.kills,
         shots: s.stats.shots,
@@ -403,6 +415,8 @@ pub fn validate_ledger(l: &Ledger) -> Result<(), GameError> {
         || l.stations > 27
         || l.places_found > l.places_total
         || l.places_total as usize > places::PLACES.len()
+        || l.places_visited > l.places_all
+        || l.places_all as usize > places::PLACES.len()
     {
         return bad("Counts out of range.");
     }
@@ -610,6 +624,26 @@ pub fn daily_config(p: &mut Profile, date: &str) -> Result<(GameConfig, bool), G
     ))
 }
 
+/// Whether today's daily river has been attempted, without starting it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(TS))]
+pub struct DailyStatus {
+    pub date: String,
+    /// An attempt has been started (or finished) on this date.
+    pub attempted: bool,
+    /// The counted result, once the first attempt has ended.
+    pub result: Option<DailyResult>,
+}
+
+pub fn daily_status(p: &Profile, date: &str) -> Result<DailyStatus, GameError> {
+    parse_date(date).ok_or_else(|| GameError::new("bad_date", "The date must be YYYY-MM-DD."))?;
+    Ok(DailyStatus {
+        date: date.to_string(),
+        attempted: p.daily.attempted.iter().any(|d| d == date),
+        result: p.daily.results.iter().find(|r| r.date == date).cloned(),
+    })
+}
+
 /// Range and id checks for a loaded profile.
 pub fn validate_profile(p: &Profile) -> Result<(), GameError> {
     let bad = |m: &str| Err(GameError::new("bad_profile", m));
@@ -716,6 +750,8 @@ pub struct ProfileView {
     pub difficulties: Vec<DifficultyView>,
     pub codex_found: u32,
     pub codex_total: u32,
+    /// Every codex entry found in any run, in codex order.
+    pub codex: Vec<crate::view::CodexEntryView>,
     pub totals: Totals,
     pub best: Vec<Ledger>,
     pub daily_streak: u32,
@@ -794,6 +830,11 @@ pub fn profile_view(p: &Profile) -> ProfileView {
         difficulties,
         codex_found: p.codex.len() as u32,
         codex_total: codex::CODEX.len() as u32,
+        codex: codex::CODEX
+            .iter()
+            .filter(|c| p.codex.contains(c.id))
+            .map(crate::view::CodexEntryView::of)
+            .collect(),
         totals: p.totals.clone(),
         best: p.best.clone(),
         daily_streak: p.daily_streak(),
@@ -850,9 +891,14 @@ mod tests {
     #[test]
     fn daily_attempt_counts_once() {
         let mut p = Profile::new();
+        assert!(!daily_status(&p, "2026-11-25").unwrap().attempted);
         let (c1, counts1) = daily_config(&mut p, "2026-11-25").unwrap();
         let (c2, counts2) = daily_config(&mut p, "2026-11-25").unwrap();
         assert!(counts1 && !counts2);
+        assert!(daily_status(&p, "2026-11-25").unwrap().attempted);
+        assert!(daily_status(&p, "2026-11-25").unwrap().result.is_none());
+        assert!(!daily_status(&p, "2026-11-24").unwrap().attempted);
+        assert!(daily_status(&p, "nope").is_err());
         assert_eq!(c1, c2);
         assert_eq!(p.daily_streak(), 1);
         daily_config(&mut p, "2026-11-26").unwrap();

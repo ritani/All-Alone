@@ -48,6 +48,44 @@ pub fn qty(name: &str, n: u32) -> String {
     }
 }
 
+/// "1 measure", "3 measures": a number with the right form of its noun.
+pub fn count(n: u32, one: &str, many: &str) -> String {
+    if n == 1 {
+        format!("1 {one}")
+    } else {
+        format!("{n} {many}")
+    }
+}
+
+/// Where a death happened, as a phrase that follows the verb:
+/// "at the lock house", "at Ford Chapel", "on the road to The Weir".
+pub fn death_place(s: &crate::state::GameState) -> String {
+    let Some(t) = &s.trip else {
+        return "at the lock house".into();
+    };
+    let name = crate::content::places::get(&t.place).map_or("", |p| p.name);
+    if name.is_empty() {
+        return "on the road".into();
+    }
+    if s.phase == crate::state::Phase::Travelling {
+        if s.homeward {
+            format!("on the road home from {}", lower_the(name))
+        } else {
+            format!("on the road to {}", lower_the(name))
+        }
+    } else {
+        format!("at {}", lower_the(name))
+    }
+}
+
+/// "The Weir" reads as "the Weir" mid-sentence.
+fn lower_the(name: &str) -> String {
+    match name.strip_prefix("The ") {
+        Some(rest) => format!("the {rest}"),
+        None => name.to_string(),
+    }
+}
+
 /// Join a list in plain English: "a, b and c".
 pub fn list(parts: &[String]) -> String {
     match parts.len() {
@@ -77,7 +115,88 @@ pub fn death_line(harm: &str, place: &str, day: u32) -> (String, String) {
         "drowned" => ("The drowned", "The drowned one held you under"),
         "hollow" => ("A hollow", "A hollow took you"),
         "small" => ("A small one", "A small one took you"),
+        "gave_up" => ("Gave up", "You gave it up"),
         _ => ("Unknown", "You died"),
     };
     (cause.to_string(), format!("{how} {place}, on day {day}."))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::state::{GameConfig, Phase, Trip, new_game};
+
+    #[test]
+    fn counts_agree() {
+        assert_eq!(count(1, "measure", "measures"), "1 measure");
+        assert_eq!(count(0, "measure", "measures"), "0 measures");
+        assert_eq!(count(3, "day", "days"), "3 days");
+    }
+
+    /// Every harm at every kind of place reads as a sentence.
+    #[test]
+    fn death_lines_read_for_every_place_and_cause() {
+        let mut s = new_game(&GameConfig {
+            seed: 4,
+            difficulty: crate::content::Difficulty::Still,
+            background: "clerk".into(),
+            keepsake: None,
+            daily: None,
+            held_marks: vec![],
+        })
+        .unwrap();
+        let harms = [
+            "bleeding",
+            "infection",
+            "cold",
+            "hunger",
+            "thirst",
+            "exhaustion",
+            "sickness",
+            "fall",
+            "stander",
+            "listener",
+            "runner",
+            "drowned",
+            "hollow",
+            "small",
+            "gave_up",
+        ];
+        let mut places = vec![death_place(&s)];
+        for p in crate::content::places::PLACES {
+            s.trip = Some(Trip {
+                place: p.id.into(),
+                room: None,
+                dog: false,
+                departed: s.minute,
+                site_noise: 0,
+            });
+            for (phase, home) in [
+                (Phase::Site, false),
+                (Phase::Travelling, false),
+                (Phase::Travelling, true),
+            ] {
+                s.phase = phase;
+                s.homeward = home;
+                places.push(death_place(&s));
+            }
+        }
+        for place in &places {
+            assert!(
+                place.starts_with("at ") || place.starts_with("on the road "),
+                "bad place phrase: {place}"
+            );
+            assert!(!place.contains(" The "), "capital article mid-sentence: {place}");
+            for h in harms {
+                let (cause, text) = death_line(h, place, 3);
+                assert_ne!(cause, "Unknown", "{h}");
+                assert!(text.ends_with(", on day 3."), "{text}");
+                assert!(text.contains(&format!(" {place},")), "{text}");
+                assert!(!text.contains("  "), "{text}");
+            }
+        }
+        assert!(places.contains(&"at Ford Chapel".to_string()));
+        assert!(places.contains(&"at the Weir".to_string()));
+        assert!(places.contains(&"on the road home from the Weir".to_string()));
+    }
 }

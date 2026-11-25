@@ -69,13 +69,22 @@ pub fn check_death(s: &mut GameState, j: &mut Journal) -> bool {
     if s.vitals.health > 0 {
         return false;
     }
-    let place = match &s.trip {
-        Some(t) => crate::content::places::get(&t.place).map_or("on the road", |p| p.name),
-        None => "at the lock house",
-    };
-    let (cause, text) = journal::death_line(&s.harm, place, s.day());
+    let place = journal::death_place(s);
+    let (cause, text) = journal::death_line(&s.harm, &place, s.day());
     end_run(s, j, EndKind::Death, &cause, &text);
     true
+}
+
+/// Give the run up: it ends as a death with the cause "Gave up", scored and
+/// ledgered like any other, so starting again never silently discards a run.
+pub fn forfeit(s: &mut GameState, j: &mut Journal) {
+    if s.ending.is_some() {
+        return;
+    }
+    s.flags.insert("gave_up".into());
+    let place = journal::death_place(s);
+    let (cause, text) = journal::death_line("gave_up", &place, s.day());
+    end_run(s, j, EndKind::Death, &cause, &text);
 }
 
 /// Continue after an event or encounter.

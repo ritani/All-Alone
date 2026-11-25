@@ -14,6 +14,10 @@ import { Meter } from '../components/Meter';
 import { Panel } from '../components/Panel';
 import { Rule } from '../components/Rule';
 import { ICON_NAMES } from '../icons/paths';
+import { EndArt } from '../components/EndArt';
+import { PLACE_ART_IDS, PlaceArt } from '../components/PlaceArt';
+import { Distance } from './game/Expedition';
+import { ChoiceCard, Choices, MoveRow } from './game/Parts';
 
 /**
  * Temporary review sheet for the visual primitives. Open with `?kit`.
@@ -131,6 +135,56 @@ export function Kit() {
       </section>
 
       <section class="kit__section">
+        <Rule>Choices, side by side</Rule>
+        <Choices label="How to go in">
+          <ChoiceCard
+            a={act({ label: 'Go in quietly', icon: 'house', minutes: 25 })}
+            title="Quietly"
+            lines={[{ text: 'Slow. No noise.' }]}
+            onAct={() => undefined}
+          />
+          <ChoiceCard
+            a={act({ label: 'Go in fast', icon: 'house', minutes: 5, noise: 4, danger: true })}
+            title="Fast"
+            lines={[{ text: 'After dark', danger: true }]}
+            onAct={() => undefined}
+          />
+        </Choices>
+        <Choices label="The locked door">
+          <ChoiceCard a={act({ label: 'Pick the lock', icon: 'lock', minutes: 20, noise: 1, odds: 64 })} onAct={() => undefined} />
+          <ChoiceCard a={act({ label: 'Use the key', icon: 'key', enabled: false, reason: 'Needs the station keys.' })} onAct={() => undefined} />
+          <ChoiceCard a={act({ label: 'Force the door', icon: 'lock', minutes: 5, noise: 18, danger: true })} onAct={() => undefined} />
+        </Choices>
+      </section>
+
+      <section class="kit__section">
+        <Rule>Item moves</Rule>
+        <ul class="moves">
+          <MoveRow
+            item={{ id: 'biscuits', name: 'Ship’s biscuit', icon: 'food', qty: 7, detail: 'Satiety +14' }}
+            a={act({ label: 'Pack', action: { type: 'pack', item: 'biscuits', qty: 1 }, max_qty: 7 })}
+            verb="Pack"
+            aside="0.2 kg"
+            onAct={() => undefined}
+          />
+          <MoveRow
+            item={{ id: 'plank', name: 'Plank', icon: 'plank', qty: 3 }}
+            a={act({ label: 'Pack', enabled: false, reason: 'It will not fit.' })}
+            verb="Pack"
+            aside="2.0 kg"
+            onAct={() => undefined}
+          />
+        </ul>
+      </section>
+
+      <section class="kit__section">
+        <Rule>Distance</Rule>
+        <Distance band="far" name="A stander" />
+        <Distance band="near" name="A listener" />
+        <Distance band="close" name="A runner" />
+      </section>
+
+      <section class="kit__section">
         <Rule>Stepper and hairlines</Rule>
         <Stepper value={qty} min={1} max={7} onChange={setQty} label="How many" />
         <Hairline value={2} max={3} steps label="Station level" />
@@ -192,6 +246,22 @@ export function Kit() {
       <section class="kit__section">
         <Rule>Illustration</Rule>
         <LockHouseArt />
+      </section>
+
+      <section class="kit__section">
+        <Rule>Places</Rule>
+        {[...PLACE_ART_IDS, 'unknown'].map((id) => (
+          <figure key={id} class="kit__place">
+            <PlaceArt place={id} />
+            <figcaption class="label prose--dim">{id}</figcaption>
+          </figure>
+        ))}
+      </section>
+
+      <section class="kit__section">
+        <Rule>Endings</Rule>
+        <EndArt kind="departure" />
+        <EndArt kind="freeze_out" />
       </section>
 
       <p class="kit__foot">

@@ -1,5 +1,6 @@
 import type { ProfileView, View } from '../../core';
 import { Button } from '../components/Button';
+import { EndArt } from '../components/EndArt';
 import { Icon } from '../components/Icon';
 import { Page } from '../components/Page';
 import { Rule } from '../components/Rule';
@@ -15,12 +16,21 @@ export interface EndedProps {
 
 const HEADINGS = { death: 'Dead', departure: 'Downriver', freeze_out: 'Frozen in' } as const;
 
+/** A last line under the ending, by kind: the run is over, the voice stays level. */
+const CODA = {
+  death: 'Calder’s Reach is as quiet as it was.',
+  departure: 'Two days to the estuary. You do not look back until the town is gone.',
+  freeze_out: 'The river will open again in the spring. You will not be here to see it.',
+} as const;
+
 /** The end of a run: cause, the ledger, score, remnants, new marks and unlocks. */
 export function Ended({ view, end, profile, onDone }: EndedProps) {
   const ending = view?.ending ?? null;
   const ledger = end?.ledger ?? view?.ledger ?? null;
   const report = end?.report ?? null;
   const kind = ending?.kind ?? ledger?.end ?? 'death';
+  const cause = ending?.cause ?? ledger?.cause ?? '';
+  const gaveUp = kind === 'death' && cause === 'Gave up';
   const marks = profile?.marks ?? [];
   const newMarks = (report?.new_marks ?? []).map((id) => marks.find((m) => m.id === id)).filter((m) => m !== undefined);
   const unlocked = (report?.unlocked_backgrounds ?? [])
@@ -28,11 +38,21 @@ export function Ended({ view, end, profile, onDone }: EndedProps) {
     .filter((b) => b !== undefined);
 
   return (
-    <Page title={HEADINGS[kind]} kicker={ledger ? `Day ${ledger.days}` : undefined} class={`ended ended--${kind}`}>
+    <Page
+      title={gaveUp ? 'Given up' : HEADINGS[kind]}
+      kicker={ledger ? `Day ${ledger.days}${ledger.nights > 0 ? `, ${ledger.nights} ${ledger.nights === 1 ? 'night' : 'nights'}` : ''}` : undefined}
+      class={`ended ended--${kind}`}
+    >
+      {kind !== 'death' && (
+        <figure class="ended__art">
+          <EndArt kind={kind} />
+        </figure>
+      )}
       {(ending ?? ledger) && (
         <div class="ended__cause">
-          <p class="ended__why label">{ending?.cause ?? ledger?.cause}</p>
+          <p class="ended__why label">{cause}</p>
           <p class="prose ended__text">{ending?.text ?? ledger?.text}</p>
+          {!gaveUp && <p class="prose prose--dim ended__coda">{CODA[kind]}</p>}
         </div>
       )}
 

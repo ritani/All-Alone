@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "ts")]
 use ts_rs::TS;
 
-pub use action::{Action, GameEvent, Outcome, dispatch};
+pub use action::{Action, GameEvent, Outcome, dispatch, forfeit};
 pub use meta::{Ledger, Profile};
 pub use state::{GameConfig, GameState, new_game};
 pub use view::{View, view};
