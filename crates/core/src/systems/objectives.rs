@@ -137,7 +137,16 @@ pub fn list(s: &GameState) -> Vec<Objective> {
             v.push(o("find_part", where_part(s, pt), false, "ferry"));
         }
         let drum = items::get("fuel_drum").map_or(0, |d| d.weight);
-        if !s.ferry.contains("fuel_drum") && inv_count(&s.store, "fuel_drum") == 0 && inventory::capacity(s) < drum {
+        // Only once the player has learned where the drum is; before that it is noise.
+        let drum_known = places::PLACES
+            .iter()
+            .filter(|p| p.rooms.iter().any(|r| r.fixed.iter().any(|(id, _)| *id == "fuel_drum")))
+            .any(|p| s.places.get(p.id).is_some_and(|ps| ps.known));
+        if drum_known
+            && !s.ferry.contains("fuel_drum")
+            && inv_count(&s.store, "fuel_drum") == 0
+            && inventory::capacity(s) < drum
+        {
             v.push(o(
                 "bag",
                 "The fuel drum is too heavy to carry as you are. Find or sew a bag.",

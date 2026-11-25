@@ -508,6 +508,8 @@
 }
 
 .sheet__body {
+  /* Containing block, so visually hidden children scroll with it and do not stretch the page. */
+  position: relative;
   overflow-y: auto;
   padding: var(--sp-4) var(--sp-5) var(--sp-5);
   display: flex;

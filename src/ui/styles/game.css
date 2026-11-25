@@ -79,6 +79,8 @@
 }
 
 .game__panel {
+  /* Containing block, so visually hidden children scroll with it and do not stretch the page. */
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -240,6 +242,8 @@
 
 /* ------------------------------------------------------------------ Journal */
 .journal {
+  /* Containing block, so visually hidden children scroll with it and do not stretch the page. */
+  position: relative;
   flex: none;
   height: clamp(7.5rem, 28dvh, 17rem);
   overflow-y: auto;
